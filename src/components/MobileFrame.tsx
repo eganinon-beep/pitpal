@@ -45,7 +45,7 @@ export default function MobileFrame({
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-xl overflow-hidden shadow-sm flex items-center justify-center border border-slate-100">
               <img 
-                src="/src/assets/images/app_icon_1782552874180.jpg" 
+                src="/app_icon.jpg" 
                 alt="pitpal" 
                 className="w-full h-full object-cover"
                 referrerPolicy="no-referrer"
