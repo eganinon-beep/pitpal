@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { 
   Car, Droplet, Wrench, Bell, LayoutDashboard, BarChart3, 
-  Settings2, Wifi, Battery, ShieldAlert, BadgeInfo, FileText,
+  Settings2, ShieldAlert, BadgeInfo, FileText,
   Plus, Gauge
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
@@ -28,26 +28,8 @@ export default function MobileFrame({
   onOpenQuickLogMaintenance,
   onOpenUpdateMileage
 }: MobileFrameProps) {
-  const [systemTime, setSystemTime] = useState('');
   const [showPreferencesMenu, setShowPreferencesMenu] = useState(false);
   const [showQuickMenu, setShowQuickMenu] = useState(false);
-
-  // Update mock system status clock
-  useEffect(() => {
-    const updateTime = () => {
-      const now = new Date();
-      setSystemTime(
-        now.toLocaleTimeString('en-US', {
-          hour: '2-digit',
-          minute: '2-digit',
-          hour12: false,
-        })
-      );
-    };
-    updateTime();
-    const interval = setInterval(updateTime, 60000);
-    return () => clearInterval(interval);
-  }, []);
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center font-sans select-none" id="mobile-app-shell">
@@ -58,22 +40,8 @@ export default function MobileFrame({
       {/* Main Bezel-Phone Container */}
       <div className="w-full max-w-md min-h-screen md:min-h-[850px] md:h-[850px] bg-slate-50 border-0 md:border-[10px] md:border-slate-200 md:rounded-[42px] flex flex-col relative overflow-hidden shadow-2xl shadow-slate-350/40">
         
-        {/* Mock Notch and Status bar (Hidden on pure mobile to match native browser, displays on desktop) */}
-        <div className="h-11 bg-white px-6 pt-3 flex justify-between items-center z-50 shrink-0 text-slate-700 md:rounded-t-[32px] border-b border-slate-100">
-          <span className="text-[11px] font-bold tracking-tight font-sans">{systemTime || '09:41'}</span>
-          
-          {/* Dynamic Small Notch */}
-          <div className="absolute left-1/2 -translate-x-1/2 top-1.5 w-24 h-4 bg-slate-100 rounded-full border border-slate-200/50 hidden md:block" />
-          
-          <div className="flex items-center gap-2">
-            <Wifi className="h-3 w-3 text-slate-500" />
-            <span className="text-[9px] font-semibold text-indigo-600 bg-indigo-50 px-1 py-0.5 rounded-sm scale-90 border border-indigo-100 uppercase">LTE</span>
-            <Battery className="h-4 w-4 text-slate-500" />
-          </div>
-        </div>
-
         {/* Global Toolbar Header - Settings, App Title */}
-        <header className="h-14 bg-white border-b border-slate-200 px-5 flex justify-between items-center z-30 shrink-0">
+        <header className="h-14 bg-white border-b border-slate-200 px-5 flex justify-between items-center z-30 shrink-0 md:rounded-t-[32px]">
           <div className="flex items-center gap-2.5">
             <div className="p-1.5 bg-indigo-600 rounded-xl max-w-max text-white shadow-sm">
               <Car className="h-4 w-4" />
