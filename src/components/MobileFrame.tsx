@@ -43,8 +43,13 @@ export default function MobileFrame({
         {/* Global Toolbar Header - Settings, App Title */}
         <header className="h-14 bg-white border-b border-slate-200 px-5 flex justify-between items-center z-30 shrink-0 md:rounded-t-[32px]">
           <div className="flex items-center gap-2.5">
-            <div className="p-1.5 bg-indigo-600 rounded-xl max-w-max text-white shadow-sm">
-              <Car className="h-4 w-4" />
+            <div className="w-8 h-8 rounded-xl overflow-hidden shadow-sm flex items-center justify-center border border-slate-100">
+              <img 
+                src="/src/assets/images/app_icon_1782552874180.jpg" 
+                alt="pitpal" 
+                className="w-full h-full object-cover"
+                referrerPolicy="no-referrer"
+              />
             </div>
             <div>
               <h1 className="text-sm font-extrabold tracking-tight text-slate-900 font-sans lowercase">pitpal</h1>
