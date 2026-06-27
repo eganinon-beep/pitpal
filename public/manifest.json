@@ -1,0 +1,20 @@
+{
+  "short_name": "pitpal",
+  "name": "pitpal - Vehicle companion",
+  "icons": [
+    {
+      "src": "/app_icon.jpg",
+      "sizes": "192x192",
+      "type": "image/jpeg"
+    },
+    {
+      "src": "/app_icon.jpg",
+      "sizes": "512x512",
+      "type": "image/jpeg"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#0ea5e9",
+  "theme_color": "#0ea5e9",
+  "display": "standalone"
+}
