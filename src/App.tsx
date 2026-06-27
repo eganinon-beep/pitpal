@@ -152,6 +152,7 @@ export default function App() {
   const [selectedDetailVehicleId, setSelectedDetailVehicleId] = useState<string | null>(null);
   const [detailSubTab, setDetailSubTab] = useState<'refills' | 'services'>('refills');
   const [showAddFormInDetail, setShowAddFormInDetail] = useState(false);
+  const [initialSelectedActivityId, setInitialSelectedActivityId] = useState<{ id: string, type: 'refill' | 'maintenance' | 'odometer' } | null>(null);
 
   // Multi-tab quick form launchers
   const [quickAddFuel, setQuickAddFuel] = useState(false);
@@ -538,7 +539,7 @@ export default function App() {
       hideQuickAction={isAddingVehicle || isAddingDocument}
     >
       {/* 1. DASHBOARD VIEW */}
-      {activeTab === 'dashboard' && (
+      <div className={`flex-1 overflow-y-auto px-5 pt-4 h-full scrollbar-thin scrollbar-track-slate-50 scrollbar-thumb-slate-200 ${activeTab === 'dashboard' ? 'block' : 'hidden'}`} id="dashboard-tab-wrapper">
         <DashboardTab
           vehicles={vehicles}
           refills={refills}
@@ -548,7 +549,11 @@ export default function App() {
           selectedVehicleId={selectedVehicleId}
           setSelectedVehicleId={setSelectedVehicleId}
           onNavigateToTab={(tabId) => {
-            if (tabId === 'maintenance') {
+            if (tabId === 'vehicles') {
+              setSelectedDetailVehicleId(null);
+              setShowAddFormInDetail(false);
+              setActiveTab('vehicles');
+            } else if (tabId === 'maintenance') {
               setActiveTab('vehicles');
               setDetailSubTab('services');
               if (selectedVehicleId !== 'all') {
@@ -560,11 +565,16 @@ export default function App() {
               setActiveTab(tabId);
             }
           }}
+          onSelectRecentOperation={(id, type, vehicleId) => {
+            setSelectedDetailVehicleId(vehicleId);
+            setInitialSelectedActivityId({ id, type });
+            setActiveTab('vehicles');
+          }}
         />
-      )}
+      </div>
 
       {/* 2. FLEET GARAGE TAB */}
-      {activeTab === 'vehicles' && (
+      <div className={`flex-1 overflow-y-auto px-5 pt-4 h-full scrollbar-thin scrollbar-track-slate-50 scrollbar-thumb-slate-200 ${activeTab === 'vehicles' ? 'block' : 'hidden'}`} id="vehicles-tab-wrapper">
         <VehiclesTab
           vehicles={vehicles}
           refills={refills}
@@ -587,11 +597,13 @@ export default function App() {
           showAddFormInDetail={showAddFormInDetail}
           setShowAddFormInDetail={setShowAddFormInDetail}
           onShowAddFormChange={setIsAddingVehicle}
+          initialSelectedActivityId={initialSelectedActivityId}
+          setInitialSelectedActivityId={setInitialSelectedActivityId}
         />
-      )}
+      </div>
 
       {/* 5. DRIVING DEADLINES & RENEWALS TAB */}
-      {activeTab === 'reminders' && (
+      <div className={`flex-1 overflow-y-auto px-5 pt-4 h-full scrollbar-thin scrollbar-track-slate-50 scrollbar-thumb-slate-200 ${activeTab === 'reminders' ? 'block' : 'hidden'}`} id="reminders-tab-wrapper">
         <RemindersTab
           reminders={reminders}
           vehicles={vehicles}
@@ -602,10 +614,10 @@ export default function App() {
           onCloseImmediateForm={() => setQuickAddReminder(false)}
           onShowAddFormChange={setIsAddingDocument}
         />
-      )}
+      </div>
 
       {/* 6. DIAGNOSTICS & BACKUPS TAB */}
-      {activeTab === 'reports' && (
+      <div className={`flex-1 overflow-y-auto px-5 pt-4 h-full scrollbar-thin scrollbar-track-slate-50 scrollbar-thumb-slate-200 ${activeTab === 'reports' ? 'block' : 'hidden'}`} id="reports-tab-wrapper">
         <ReportsTab
           vehicles={vehicles}
           refills={refills}
@@ -615,7 +627,7 @@ export default function App() {
           onExportBackup={handleExportBackup}
           onImportBackup={handleImportBackup}
         />
-      )}
+      </div>
 
       {showUpdateMileageModal && (
         <div id="update-mileage-modal-overlay" className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fade-in">
@@ -868,6 +880,18 @@ export default function App() {
                 </div>
               ) : (
                 <div className="space-y-4">
+                  {/* Checkbox */}
+                  <label className="flex items-center gap-2.5 cursor-pointer py-1.5 border-b border-slate-100 pb-2.5">
+                    <input
+                      id="quick-fuel-fulltank-checkbox"
+                      type="checkbox"
+                      checked={quickFuelFullTank}
+                      onChange={(e) => setQuickFuelFullTank(e.target.checked)}
+                      className="rounded text-indigo-600 focus:ring-indigo-500 border-slate-300 h-4.5 w-4.5"
+                    />
+                    <span className="text-xs text-slate-600 font-bold">Filled to Full Tank (recommended for exact mileage tracking)</span>
+                  </label>
+
                   {/* Vehicle Selector */}
                   <div className="space-y-1">
                     <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider block">Select Vehicle</label>
@@ -965,18 +989,6 @@ export default function App() {
                       />
                     </div>
                   </div>
-
-                  {/* Checkbox */}
-                  <label className="flex items-center gap-2 cursor-pointer py-1.5">
-                    <input
-                      id="quick-fuel-fulltank-checkbox"
-                      type="checkbox"
-                      checked={quickFuelFullTank}
-                      onChange={(e) => setQuickFuelFullTank(e.target.checked)}
-                      className="rounded text-indigo-600 focus:ring-indigo-500 border-slate-300 h-4.5 w-4.5"
-                    />
-                    <span className="text-xs text-slate-600 font-bold">Filled to Full Tank (recommended for exact mileage tracking)</span>
-                  </label>
 
                   <div className="grid grid-cols-2 gap-4">
                     {/* Gas Station */}

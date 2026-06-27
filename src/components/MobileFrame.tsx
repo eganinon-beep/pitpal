@@ -208,7 +208,7 @@ export default function MobileFrame({
         </header>
 
         {/* Core Content Stage Viewport */}
-        <main className="flex-1 overflow-y-auto px-5 pt-4 bg-slate-50 scrollbar-thin scrollbar-track-slate-50 scrollbar-thumb-slate-200">
+        <main className="flex-1 flex flex-col min-h-0 bg-slate-50 relative overflow-hidden" id="mobile-viewport-main">
           {children}
         </main>
 

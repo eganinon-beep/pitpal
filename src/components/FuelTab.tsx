@@ -243,23 +243,6 @@ export default function FuelTab({
               )}
 
               <div className="grid grid-cols-2 gap-3.5">
-                {/* Vehicle Selector */}
-                <div className="col-span-2 space-y-1">
-                  <label className="text-[10px] uppercase font-bold text-slate-450 tracking-wider text-slate-450">Select Vehicle</label>
-                  <select
-                    id="refill-vehicle-selector"
-                    value={vehicleId}
-                    onChange={e => setVehicleId(e.target.value)}
-                    className="w-full h-11 px-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none focus:border-indigo-500 cursor-pointer font-bold"
-                  >
-                    {vehicles.map(v => (
-                      <option key={v.id} value={v.id}>
-                        {v.name} ({v.year} {v.make} {v.model}) - {v.licensePlate}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
                 {/* Full Tank Toggle */}
                 <div className="col-span-2 py-1">
                   <label className="flex items-center gap-2.5 cursor-pointer text-slate-700 hover:text-slate-900 select-none">
@@ -275,6 +258,23 @@ export default function FuelTab({
                       <span className="text-[10px] text-slate-400 block font-semibold leading-tight">Must check both consecutive refuels to calculate accurate mileage metrics</span>
                     </div>
                   </label>
+                </div>
+
+                {/* Vehicle Selector */}
+                <div className="col-span-2 space-y-1">
+                  <label className="text-[10px] uppercase font-bold text-slate-450 tracking-wider text-slate-450">Select Vehicle</label>
+                  <select
+                    id="refill-vehicle-selector"
+                    value={vehicleId}
+                    onChange={e => setVehicleId(e.target.value)}
+                    className="w-full h-11 px-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none focus:border-indigo-500 cursor-pointer font-bold"
+                  >
+                    {vehicles.map(v => (
+                      <option key={v.id} value={v.id}>
+                        {v.name} ({v.year} {v.make} {v.model}) - {v.licensePlate}
+                      </option>
+                    ))}
+                  </select>
                 </div>
 
                 {/* Date */}

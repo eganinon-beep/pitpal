@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
-  Car, Plus, Droplet, Wrench, Bell, AlertTriangle, 
-  Coins, TrendingUp, Gauge, ChevronRight, CheckCircle2, CalendarClock, FileText
+  Car, Plus, Droplet, Wrench, AlertTriangle, 
+  TrendingUp, Gauge, ChevronRight, CheckCircle2, CalendarClock, FileText
 } from 'lucide-react';
 import { Vehicle, FuelRefill, MaintenanceLog, RenewalReminder, UserPreferences } from '../types';
 import { formatCurrency, formatEfficiency, formatDate } from '../utils';
@@ -16,6 +16,7 @@ interface DashboardTabProps {
   selectedVehicleId: string | 'all';
   setSelectedVehicleId: (id: string | 'all') => void;
   onNavigateToTab: (tabId: string) => void;
+  onSelectRecentOperation?: (id: string, type: 'refill' | 'maintenance' | 'odometer', vehicleId: string) => void;
 }
 
 export default function DashboardTab({
@@ -26,7 +27,8 @@ export default function DashboardTab({
   preferences,
   selectedVehicleId,
   setSelectedVehicleId,
-  onNavigateToTab
+  onNavigateToTab,
+  onSelectRecentOperation
 }: DashboardTabProps) {
   // Filter entities according to selected vehicle
   const currentVehicleRefills = selectedVehicleId === 'all' 
@@ -51,41 +53,39 @@ export default function DashboardTab({
     ? validEfficiencies.reduce((sum, val) => sum + val, 0) / validEfficiencies.length
     : null;
 
-  // 2. Spending - Current Month (30 days)
-  const thirtyDaysAgo = new Date();
-  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-  
-  const recentRefillsCost = currentVehicleRefills
-    .filter(r => new Date(r.date) >= thirtyDaysAgo)
-    .reduce((sum, r) => sum + r.totalCost, 0);
-
-  const recentMaintenanceCost = currentVehicleMaintenance
-    .filter(m => m.status === 'Completed' && new Date(m.date) >= thirtyDaysAgo)
-    .reduce((sum, m) => sum + m.cost, 0);
-
-  const totalRecentSpend = recentRefillsCost + recentMaintenanceCost;
-
-  // 3. Odometer
+  // 2. Odometer
   const selectedVehicle = vehicles.find(v => v.id === selectedVehicleId);
   const currentOdometerDisplay = selectedVehicle
     ? `${selectedVehicle.currentOdometer.toLocaleString()} ${preferences.distanceUnit}`
     : vehicles.length > 0 
       ? 'Select vehicle'
       : 'No vehicles yet';
-
-  // 4. Alerts & Reminders check
-  const activeRemindersCount = currentVehicleReminders.filter(r => !r.completed).length;
   
-  // Find urgent reminders (due in less than 30 days or overdue)
-  const today = new Date();
-  const alertThreshold = new Date();
-  alertThreshold.setDate(today.getDate() + 30);
+  const todayMidnight = new Date();
+  todayMidnight.setHours(0, 0, 0, 0);
 
-  const urgentReminders = currentVehicleReminders.filter(rem => {
+  const expiredReminders = currentVehicleReminders.filter(rem => {
     if (rem.completed) return false;
     const dueDate = new Date(rem.dueDate);
-    return dueDate <= alertThreshold;
+    dueDate.setHours(0, 0, 0, 0);
+    return dueDate < todayMidnight;
   });
+
+  const upcomingReminders = currentVehicleReminders.filter(rem => {
+    if (rem.completed) return false;
+    const dueDate = new Date(rem.dueDate);
+    dueDate.setHours(0, 0, 0, 0);
+    
+    if (dueDate >= todayMidnight) {
+      const warningThreshold = new Date(todayMidnight);
+      warningThreshold.setDate(todayMidnight.getDate() + rem.alertDaysBefore);
+      return dueDate <= warningThreshold;
+    }
+    return false;
+  });
+
+  const expiredCount = expiredReminders.length;
+  const upcomingCount = upcomingReminders.length;
 
   // Recent combined timeline items
   const combinedTimelineItems = [
@@ -97,6 +97,7 @@ export default function DashboardTab({
       subtitle: `${r.volume} ${preferences.volumeUnit} Refilled`,
       amount: r.totalCost,
       status: 'Completed',
+      vehicleId: r.vehicleId,
     })),
     ...currentVehicleMaintenance.map(m => {
       const isOdometerUpdate = m.serviceType === 'Odometer Update';
@@ -110,6 +111,7 @@ export default function DashboardTab({
           : (m.title === 'Odometer Reading Updated' ? '' : m.title),
         amount: m.cost,
         status: m.status,
+        vehicleId: m.vehicleId,
       };
     })
   ].sort((a, b) => {
@@ -119,31 +121,12 @@ export default function DashboardTab({
     if (b.type === 'odometer' && a.type !== 'odometer') return 1;
     return b.id.localeCompare(a.id);
   })
-   .slice(0, 3); // Get top 3 only for home screen
+   .slice(0, 5); // Limit recent operation to latest 5 activities
 
   return (
     <div className="space-y-6 pb-24" id="dashboard-tab-container">
-      {/* 1. Header with custom greetings */}
-      <div className="flex justify-between items-center px-1 pt-1">
-        <div>
-          <h2 className="text-xl font-sans tracking-tight font-bold text-slate-900">Dashboard</h2>
-          <p className="text-slate-500 text-xs">Fleet management dashboard</p>
-        </div>
-      </div>
-
-      {/* 2. Horizontal Vehicle Selector */}
+      {/* Horizontal Vehicle Selector */}
       <div className="space-y-2">
-        <div className="flex justify-between items-center">
-          <span className="text-[10px] font-black text-slate-400 tracking-widest uppercase px-1">Your Garage</span>
-          <button 
-            id="add-vehicle-nav-btn"
-            onClick={() => onNavigateToTab('vehicles')} 
-            className="flex items-center text-xs text-indigo-600 hover:text-indigo-800 font-bold underline transition"
-          >
-            Manage Garage <ChevronRight className="h-3 w-3 inline ml-0.5" />
-          </button>
-        </div>
-        
         <div className="relative px-1">
           <select
             id="vehicle-select-dropdown"
@@ -178,12 +161,28 @@ export default function DashboardTab({
 
       {/* 3. Urgent Renewal Notifications banner */}
       <AnimatePresence>
-        {indigoRenAlert(urgentReminders, onNavigateToTab)}
+        {indigoRenAlert(expiredCount, upcomingCount, onNavigateToTab)}
       </AnimatePresence>
 
       {/* 4. Stat Widgets Bento Grid */}
       <div className="grid grid-cols-2 gap-4">
-        {/* Efficiency Card */}
+        {/* Dynamic Odometer Card (Gauge) */}
+        <div className="bg-white border border-slate-200 shadow-sm rounded-3xl p-5 flex flex-col justify-between hover:border-slate-350 transition duration-200">
+          <div className="flex justify-between items-start">
+            <div className="p-2 bg-slate-50 text-slate-600 rounded-xl border border-slate-100">
+              <Gauge className="h-4 w-4" />
+            </div>
+            <span className="text-[9px] font-bold text-slate-500 bg-slate-50 px-2 py-0.5 rounded-full uppercase tracking-wider">Gauge</span>
+          </div>
+          <div className="mt-4 space-y-0.5">
+            <h5 className="text-lg font-black font-sans text-slate-900 tracking-tight truncate">
+              {currentOdometerDisplay}
+            </h5>
+            <p className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Odometer status</p>
+          </div>
+        </div>
+
+        {/* Efficiency Card (Avg Fuel) */}
         <div className="bg-white border border-slate-200 shadow-sm rounded-3xl p-5 flex flex-col justify-between hover:border-slate-350 transition duration-200">
           <div className="flex justify-between items-start">
             <div className="p-2 bg-emerald-50 text-emerald-600 rounded-xl border border-emerald-100">
@@ -200,71 +199,12 @@ export default function DashboardTab({
             </p>
           </div>
         </div>
-
-        {/* 30-Day Spending Card */}
-        <div className="bg-white border border-slate-200 shadow-sm rounded-3xl p-5 flex flex-col justify-between hover:border-slate-350 transition duration-200">
-          <div className="flex justify-between items-start">
-            <div className="p-2 bg-indigo-50 text-indigo-600 rounded-xl border border-indigo-100">
-              <Coins className="h-4 w-4" />
-            </div>
-            <span className="text-[9px] font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full">Last 30d</span>
-          </div>
-          <div className="mt-4 space-y-0.5">
-            <h5 className="text-2xl font-black font-sans text-slate-900 tracking-tight">
-              {formatCurrency(totalRecentSpend, preferences.currency)}
-            </h5>
-            <p className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Total logged spend</p>
-          </div>
-        </div>
-
-        {/* Dynamic Odometer Card */}
-        <div className="bg-white border border-slate-200 shadow-sm rounded-3xl p-5 flex flex-col justify-between hover:border-slate-350 transition duration-200">
-          <div className="flex justify-between items-start">
-            <div className="p-2 bg-slate-50 text-slate-600 rounded-xl border border-slate-100">
-              <Gauge className="h-4 w-4" />
-            </div>
-            <span className="text-[9px] font-bold text-slate-500 bg-slate-50 px-2 py-0.5 rounded-full uppercase tracking-wider">Gauge</span>
-          </div>
-          <div className="mt-4 space-y-0.5">
-            <h5 className="text-lg font-black font-sans text-slate-900 tracking-tight truncate">
-              {currentOdometerDisplay}
-            </h5>
-            <p className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Odometer status</p>
-          </div>
-        </div>
-
-        {/* Active Deadlines Card */}
-        <div className="bg-white border border-slate-200 shadow-sm rounded-3xl p-5 flex flex-col justify-between hover:border-slate-350 transition duration-200">
-          <div className="flex justify-between items-start">
-            <div className="p-2 bg-amber-50 text-amber-600 rounded-xl border border-amber-100">
-              <Bell className="h-4 w-4" />
-            </div>
-            {activeRemindersCount > 0 && (
-              <span className="text-[9px] font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full uppercase tracking-wider">
-                Pending
-              </span>
-            )}
-          </div>
-          <div className="mt-4 space-y-0.5">
-            <h5 className="text-2xl font-black font-sans text-slate-900 tracking-tight">
-              {activeRemindersCount}
-            </h5>
-            <p className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Reminders due</p>
-          </div>
-        </div>
       </div>
 
       {/* 5. Key Timeline Feed (Bento Style) */}
       <div className="bg-white border border-slate-200 shadow-sm rounded-3xl p-6 space-y-4">
-        <div className="flex justify-between items-center">
+        <div className="flex justify-between items-center border-b border-slate-50 pb-2">
           <span className="text-[10px] font-black text-slate-400 tracking-widest uppercase">Recent Operations</span>
-          <button 
-            id="view-logs-nav-btn"
-            onClick={() => onNavigateToTab('maintenance')}
-            className="text-xs text-indigo-600 hover:text-indigo-800 font-bold underline transition flex items-center"
-          >
-            History Feed <ChevronRight className="h-3.5 w-3.5 ml-0.5 animate-pulse" />
-          </button>
         </div>
 
         {combinedTimelineItems.length === 0 ? (
@@ -273,42 +213,54 @@ export default function DashboardTab({
             <p className="text-slate-500 text-xs font-semibold">No operations logged recently.</p>
           </div>
         ) : (
-          <div className="space-y-4">
-            {combinedTimelineItems.map((item, index) => (
-              <div key={`${item.id}-${index}`} className="flex justify-between items-center group pb-1.5 last:pb-0 border-b border-slate-50 last:border-0">
-                <div className="flex items-center gap-3">
-                  <div className={`p-2.5 rounded-xl shrink-0 ${
-                    item.type === 'refill' 
-                      ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' 
-                      : item.type === 'odometer'
-                        ? 'bg-amber-50 text-amber-500 border border-amber-100'
-                        : 'bg-indigo-50 text-indigo-600 border border-indigo-100'
-                  }`}>
-                    {item.type === 'refill' ? (
-                      <Droplet className="h-4 w-4" />
-                    ) : item.type === 'odometer' ? (
-                      <Gauge className="h-4 w-4" />
-                    ) : (
-                      <Wrench className="h-4 w-4" />
+          <div className="space-y-3">
+            {combinedTimelineItems.map((item, index) => {
+              const v = vehicles.find(veh => veh.id === item.vehicleId);
+              return (
+                <div 
+                  key={`${item.id}-${index}`} 
+                  onClick={() => onSelectRecentOperation?.(item.id, item.type, item.vehicleId)}
+                  className="flex justify-between items-center group pb-2 last:pb-0 border-b border-slate-50 last:border-0 cursor-pointer hover:bg-slate-50/50 p-2 -mx-2 rounded-2xl transition duration-150"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className={`p-2.5 rounded-xl shrink-0 ${
+                      item.type === 'refill' 
+                        ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' 
+                        : item.type === 'odometer'
+                          ? 'bg-amber-50 text-amber-500 border border-amber-100'
+                          : 'bg-indigo-50 text-indigo-600 border border-indigo-100'
+                    }`}>
+                      {item.type === 'refill' ? (
+                        <Droplet className="h-4 w-4" />
+                      ) : item.type === 'odometer' ? (
+                        <Gauge className="h-4 w-4" />
+                      ) : (
+                        <Wrench className="h-4 w-4" />
+                      )}
+                    </div>
+                    <div>
+                      {selectedVehicleId === 'all' && v && (
+                        <span className="block text-[9px] uppercase font-bold text-indigo-600 bg-indigo-50/70 border border-indigo-100/50 px-1.5 py-0.5 rounded max-w-max mb-1 tracking-wider">
+                          {v.name} {v.licensePlate ? `(${v.licensePlate})` : ''}
+                        </span>
+                      )}
+                      <h6 className="text-xs font-bold text-slate-800 group-hover:text-indigo-600 transition">{item.title}</h6>
+                      <p className="text-[10px] text-slate-450 font-medium">{item.subtitle} • {formatDate(item.date)}</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    {item.amount > 0 && (
+                      <span className="text-xs font-black text-slate-900">{formatCurrency(item.amount, preferences.currency)}</span>
+                    )}
+                    {item.status === 'Scheduled' && (
+                      <span className="block text-[8px] font-bold text-amber-600 bg-amber-50 border border-amber-100 px-1 py-0.5 rounded uppercase mt-0.5 max-w-max ml-auto">
+                        Pending
+                      </span>
                     )}
                   </div>
-                  <div>
-                    <h6 className="text-xs font-bold text-slate-800 group-hover:text-indigo-600 transition">{item.title}</h6>
-                    <p className="text-[10px] text-slate-400 font-medium">{item.subtitle} • {formatDate(item.date)}</p>
-                  </div>
                 </div>
-                <div className="text-right">
-                  {item.amount > 0 && (
-                    <span className="text-xs font-black text-slate-900">{formatCurrency(item.amount, preferences.currency)}</span>
-                  )}
-                  {item.status === 'Scheduled' && (
-                    <span className="block text-[8px] font-bold text-amber-600 bg-amber-50 border border-amber-100 px-1 py-0.5 rounded uppercase mt-0.5 max-w-max ml-auto">
-                      Pending
-                    </span>
-                  )}
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
@@ -317,31 +269,76 @@ export default function DashboardTab({
   );
 }
 
-function indigoRenAlert(urgentReminders: RenewalReminder[], onNavigateToTab: (tabId: string) => void) {
-  if (urgentReminders.length === 0) return null;
+function indigoRenAlert(expiredCount: number, upcomingCount: number, onNavigateToTab: (tabId: string) => void) {
+  let borderClass = 'border-transparent';
+  let iconClass = 'bg-slate-50 text-slate-400 border border-slate-100';
+  let iconAnimationClass = '';
+  let messageContent: React.ReactNode = null;
+
+  if (expiredCount === 0 && upcomingCount === 0) {
+    borderClass = 'border-transparent bg-slate-50/40';
+    iconClass = 'bg-slate-100 text-slate-400 border border-slate-200';
+    messageContent = (
+      <>
+        You have 0 expired document/s and 0 upcoming document expiration/s!
+      </>
+    );
+  } else if (expiredCount > 0) {
+    // Red border if there is an expired document (and optionally upcoming)
+    borderClass = 'border-red-200 bg-white';
+    iconClass = 'bg-red-50 text-red-600 border border-red-100';
+    iconAnimationClass = 'animate-pulse';
+    if (upcomingCount === 0) {
+      messageContent = (
+        <>
+          You have <strong className="text-red-700">{expiredCount}</strong> {expiredCount > 1 ? 'expired documents' : 'expired document'}!
+        </>
+      );
+    } else {
+      messageContent = (
+        <>
+          You have <strong className="text-red-700">{expiredCount}</strong> {expiredCount > 1 ? 'expired documents' : 'expired document'} and <strong className="text-red-700">{upcomingCount}</strong> {upcomingCount > 1 ? 'upcoming document expirations' : 'upcoming document expiration'}!
+        </>
+      );
+    }
+  } else {
+    // Orange border if upcoming only (expiredCount is 0, upcomingCount > 0)
+    borderClass = 'border-orange-200 bg-white';
+    iconClass = 'bg-orange-50 text-orange-600 border border-orange-100';
+    iconAnimationClass = 'animate-pulse';
+    messageContent = (
+      <>
+        You have <strong className="text-orange-700">{upcomingCount}</strong> {upcomingCount > 1 ? 'upcoming document expirations' : 'upcoming document expiration'}!
+      </>
+    );
+  }
+
   return (
     <motion.div 
       initial={{ opacity: 0, y: -10 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -10 }}
-      className="bg-white border border-amber-200 rounded-3xl p-5 flex items-start gap-4 shadow-sm relative overflow-hidden"
+      className={`border ${borderClass} rounded-2xl p-4 flex items-center gap-3.5 shadow-sm relative overflow-hidden`}
       id="urgent-alert-banner"
     >
-      <div className="p-2.5 bg-amber-50 text-amber-600 rounded-2xl shrink-0 border border-amber-100">
-        <FileText className="h-5 w-5 animate-pulse" />
+      <div className={`p-2 rounded-xl shrink-0 ${iconClass}`}>
+        <FileText className={`h-4.5 w-4.5 ${iconAnimationClass}`} />
       </div>
       
-      <div className="space-y-1 flex-1 text-slate-850">
-        <h4 className="text-sm font-bold text-slate-900">Document Expiration Alert</h4>
-        <p className="text-slate-600 text-xs leading-relaxed font-medium">
-          You have <strong className="text-amber-700">{urgentReminders.length}</strong> upcoming document expiration{urgentReminders.length > 1 ? 's' : ''}! Please review registration & insurance details.
-        </p>
+      <div className="flex-1 min-w-0 text-slate-850 flex flex-col md:flex-row md:items-center justify-between gap-2">
+        <div className="space-y-0.5">
+          <h4 className="text-xs font-bold text-slate-900">Document Expiration Alert</h4>
+          <p className="text-slate-600 text-[11px] leading-snug font-medium">
+            {messageContent}
+          </p>
+        </div>
         <button 
           id="view-reminders-action-btn"
           onClick={() => onNavigateToTab('reminders')}
-          className="text-xs text-indigo-650 font-bold hover:underline mt-1.5 inline-flex items-center gap-1 transition"
+          className="text-xs text-indigo-650 hover:text-indigo-800 font-bold hover:underline shrink-0 flex items-center gap-0.5 transition cursor-pointer self-start md:self-center mt-1 md:mt-0"
         >
-          View Documents Now <ChevronRight className="h-3 w-3" />
+          <span>View Documents</span>
+          <ChevronRight className="h-3 w-3" />
         </button>
       </div>
     </motion.div>

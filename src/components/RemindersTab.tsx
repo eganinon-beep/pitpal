@@ -195,15 +195,30 @@ export default function RemindersTab({
       {/* Add reminder entry panel */}
       <AnimatePresence>
         {showAddForm && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            className="bg-white border border-slate-200 shadow-sm rounded-3xl p-5 space-y-4 overflow-hidden"
-            id="reminders-add-form"
-          >
+          <div className="fixed inset-0 z-55 flex items-center justify-center p-4 overflow-y-auto">
+            <motion.div
+              id="add-reminder-backdrop"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 0.4 }}
+              exit={{ opacity: 0 }}
+              onClick={() => {
+                setShowAddForm(false);
+                setEditingId(null);
+                setFormError('');
+                if (onCloseImmediateForm) onCloseImmediateForm();
+              }}
+              className="absolute inset-0 bg-slate-950/60 backdrop-blur-xs"
+            />
+            
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 15 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 15 }}
+              className="bg-white border border-slate-200 shadow-2xl rounded-3xl p-5 w-full max-w-md relative z-50 space-y-4 text-left text-slate-800"
+              id="reminders-add-form"
+            >
             <div className="flex justify-between items-center pb-2 border-b border-slate-100">
-              <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+              <h3 className="text-xs font-bold text-slate-900 flex items-center gap-2">
                 <FileText className="h-4 w-4 text-indigo-600" /> {editingId ? 'Edit Document Details' : 'Add Vehicle Document'}
               </h3>
               <button
@@ -228,15 +243,15 @@ export default function RemindersTab({
                 </div>
               )}
 
-              <div className="grid grid-cols-2 gap-3.5">
+              <div className="grid grid-cols-2 gap-3.5 text-xs">
                 {/* Associated Vehicle */}
                 <div className="col-span-2 space-y-1">
-                  <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Associated Vehicle</label>
+                  <label className="text-[8px] uppercase font-bold text-slate-400 tracking-wider">Associated Vehicle</label>
                   <select
                     id="reminder-car-selector"
                     value={vehicleId}
                     onChange={e => setVehicleId(e.target.value)}
-                    className="w-full h-11 px-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none font-bold"
+                    className="w-full h-11 px-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs focus:outline-none font-bold"
                   >
                     <option value="all">General / Personal Driver</option>
                     {vehicles.map(v => (
@@ -249,12 +264,12 @@ export default function RemindersTab({
 
                 {/* Document Type */}
                 <div className="col-span-2 space-y-1">
-                  <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Document Type</label>
+                  <label className="text-[8px] uppercase font-bold text-slate-400 tracking-wider">Document Type</label>
                   <select
                     id="reminder-type-selector"
                     value={type}
                     onChange={e => setType(e.target.value as any)}
-                    className="w-full h-11 px-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none font-bold"
+                    className="w-full h-11 px-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs focus:outline-none font-bold"
                   >
                     {REMINDER_TYPES.map(rt => (
                       <option key={rt.value} value={rt.value}>{rt.label}</option>
@@ -264,36 +279,36 @@ export default function RemindersTab({
 
                 {/* Document Title */}
                 <div className="col-span-2 space-y-1">
-                  <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Document Title *</label>
+                  <label className="text-[8px] uppercase font-bold text-slate-400 tracking-wider">Document Title *</label>
                   <input
                     id="reminder-title-input"
                     type="text"
                     value={title}
                     onChange={e => setTitle(e.target.value)}
-                    className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none font-semibold"
+                    className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs focus:outline-none font-semibold"
                   />
                 </div>
 
                 {/* Expiration Date */}
                 <div className="col-span-2 space-y-1">
-                  <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Expiration Date *</label>
+                  <label className="text-[8px] uppercase font-bold text-slate-400 tracking-wider">Expiration Date *</label>
                   <input
                     id="reminder-date-input"
                     type="date"
                     value={dueDate}
                     onChange={e => setDueDate(e.target.value)}
-                    className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none cursor-pointer font-semibold"
+                    className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs focus:outline-none cursor-pointer font-semibold"
                   />
                 </div>
 
                 {/* Warning Alert Days */}
                 <div className="col-span-2 space-y-1">
-                  <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Alert warning days</label>
+                  <label className="text-[8px] uppercase font-bold text-slate-400 tracking-wider">Alert warning days</label>
                   <select
                     id="reminder-alert-days-selector"
                     value={alertDaysBefore}
                     onChange={e => setAlertDaysBefore(Number(e.target.value))}
-                    className="w-full h-11 px-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none cursor-pointer font-bold"
+                    className="w-full h-11 px-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs focus:outline-none cursor-pointer font-bold"
                   >
                     <option value="7">7 Days Prior</option>
                     <option value="15">15 Days Prior</option>
@@ -305,14 +320,14 @@ export default function RemindersTab({
 
                 {/* Notes */}
                 <div className="col-span-2 space-y-1">
-                  <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Document Details & Notes</label>
+                  <label className="text-[8px] uppercase font-bold text-slate-400 tracking-wider">Document Details & Notes</label>
                   <textarea
                     id="reminder-notes-input"
                     placeholder="Provide policy number, Smog check schedule, or other relevant document details..."
                     rows={2}
                     value={notes}
                     onChange={e => setNotes(e.target.value)}
-                    className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none focus:border-indigo-500 font-medium"
+                    className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs focus:outline-none focus:border-indigo-500 font-medium"
                   />
                 </div>
               </div>
@@ -320,12 +335,13 @@ export default function RemindersTab({
               <button
                 id="submit-reminder-btn"
                 type="submit"
-                className="w-full h-12 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-bold transition mt-2 cursor-pointer shadow-sm"
+                className="w-full h-12 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold transition mt-2 cursor-pointer shadow-sm"
               >
                 {editingId ? 'Save Document Changes' : 'Save Document Information'}
               </button>
             </form>
-          </motion.div>
+            </motion.div>
+          </div>
         )}
       </AnimatePresence>
 

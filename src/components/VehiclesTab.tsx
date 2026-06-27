@@ -29,6 +29,8 @@ interface VehiclesTabProps {
   showAddFormInDetail: boolean;
   setShowAddFormInDetail: (show: boolean) => void;
   onShowAddFormChange?: (show: boolean) => void;
+  initialSelectedActivityId?: { id: string, type: 'refill' | 'maintenance' | 'odometer' } | null;
+  setInitialSelectedActivityId?: (val: { id: string, type: 'refill' | 'maintenance' | 'odometer' } | null) => void;
 }
 
 const VEHICLE_COLORS = [
@@ -113,7 +115,9 @@ export default function VehiclesTab({
   setDetailSubTab,
   showAddFormInDetail,
   setShowAddFormInDetail,
-  onShowAddFormChange
+  onShowAddFormChange,
+  initialSelectedActivityId,
+  setInitialSelectedActivityId
  }: VehiclesTabProps) {
   const [showAddForm, setShowAddForm] = useState(false);
 
@@ -231,6 +235,14 @@ export default function VehiclesTab({
       setActReceiptPhoto(originalLog.receiptPhoto || '');
     }
   };
+
+  React.useEffect(() => {
+    if (initialSelectedActivityId) {
+      const { id, type } = initialSelectedActivityId;
+      handleActivityClick({ id, type });
+      setInitialSelectedActivityId?.(null);
+    }
+  }, [initialSelectedActivityId, refills, maintenanceLogs]);
 
   const handleActivityPhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -961,15 +973,30 @@ export default function VehiclesTab({
       </div>
 
       {/* Add Vehicle Form Panel */}
-      {showAddForm && (
-        <motion.div 
-          initial={{ opacity: 0, height: 0 }}
-          animate={{ opacity: 1, height: 'auto' }}
-          className="bg-white border border-slate-200 shadow-sm rounded-3xl p-5 space-y-4"
-          id="vehicles-add-form"
-        >
+      <AnimatePresence>
+        {showAddForm && (
+          <div className="fixed inset-0 z-55 flex items-center justify-center p-4 overflow-y-auto">
+            <motion.div
+              id="add-vehicle-backdrop"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 0.4 }}
+              exit={{ opacity: 0 }}
+              onClick={() => {
+                setShowAddForm(false);
+                setFormError('');
+              }}
+              className="absolute inset-0 bg-slate-950/60 backdrop-blur-xs"
+            />
+            
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95, y: 15 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 15 }}
+              className="bg-white border border-slate-200 rounded-3xl p-5 w-full max-w-md relative z-50 space-y-4 shadow-2xl my-8 text-left text-slate-800"
+              id="vehicles-add-form"
+            >
           <div className="flex justify-between items-center pb-2 border-b border-slate-100">
-            <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+            <h3 className="text-xs font-bold text-slate-900 flex items-center gap-2">
               <Car className="h-4 w-4 text-indigo-600" /> New Vehicle Profile
             </h3>
             <button 
@@ -991,26 +1018,26 @@ export default function VehiclesTab({
               </div>
             )}
 
-            <div className="grid grid-cols-2 gap-3.5">
+            <div className="grid grid-cols-2 gap-3.5 text-xs">
               <div className="col-span-2 space-y-1">
-                <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Nickname *</label>
+                <label className="text-[8px] uppercase font-bold text-slate-400 tracking-wider">Nickname *</label>
                 <input
                   id="vehicle-name-input"
                   type="text"
                   placeholder="e.g. My Civic, Family SUV"
                   value={name}
                   onChange={e => setName(e.target.value)}
-                  className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none focus:border-indigo-500 font-semibold"
+                  className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs focus:outline-none focus:border-indigo-500 font-semibold"
                 />
               </div>
 
               <div className="space-y-1">
-                <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Vehicle Type</label>
+                <label className="text-[8px] uppercase font-bold text-slate-400 tracking-wider">Vehicle Type</label>
                 <select
                   id="vehicle-type-select"
                   value={vehicleType}
                   onChange={e => setVehicleType(e.target.value)}
-                  className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none focus:border-indigo-500 font-semibold cursor-pointer"
+                  className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs focus:outline-none focus:border-indigo-500 font-semibold cursor-pointer"
                 >
                   {VEHICLE_TYPES.map(type => (
                     <option key={type} value={type}>{type}</option>
@@ -1019,12 +1046,12 @@ export default function VehiclesTab({
               </div>
 
               <div className="space-y-1">
-                <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Fuel Type</label>
+                <label className="text-[8px] uppercase font-bold text-slate-400 tracking-wider">Fuel Type</label>
                 <select
                   id="vehicle-fuel-select"
                   value={fuelType}
                   onChange={e => setFuelType(e.target.value)}
-                  className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none focus:border-indigo-500 font-semibold cursor-pointer"
+                  className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs focus:outline-none focus:border-indigo-500 font-semibold cursor-pointer"
                 >
                   {FUEL_TYPES.map(type => (
                     <option key={type} value={type}>{type}</option>
@@ -1033,31 +1060,31 @@ export default function VehiclesTab({
               </div>
 
               <div className="space-y-1">
-                <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Make (Optional)</label>
+                <label className="text-[8px] uppercase font-bold text-slate-400 tracking-wider">Make (Optional)</label>
                 <input
                   id="vehicle-make-input"
                   type="text"
                   placeholder="e.g. Honda, Ford"
                   value={make}
                   onChange={e => setMake(e.target.value)}
-                  className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none focus:border-indigo-500 font-semibold"
+                  className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs focus:outline-none focus:border-indigo-500 font-semibold"
                 />
               </div>
 
               <div className="space-y-1">
-                <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Model (Optional)</label>
+                <label className="text-[8px] uppercase font-bold text-slate-400 tracking-wider">Model (Optional)</label>
                 <input
                   id="vehicle-model-input"
                   type="text"
                   placeholder="e.g. Civic Sport, F-150"
                   value={model}
                   onChange={e => setModel(e.target.value)}
-                  className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none focus:border-indigo-500 font-semibold"
+                  className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs focus:outline-none focus:border-indigo-500 font-semibold"
                 />
               </div>
 
               <div className="space-y-1">
-                <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Year</label>
+                <label className="text-[8px] uppercase font-bold text-slate-400 tracking-wider">Year</label>
                 <input
                   id="vehicle-year-input"
                   type="number"
@@ -1065,12 +1092,12 @@ export default function VehiclesTab({
                   max={new Date().getFullYear() + 1}
                   value={year}
                   onChange={e => setYear(Number(e.target.value))}
-                  className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none focus:border-indigo-500 font-semibold"
+                  className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs focus:outline-none focus:border-indigo-500 font-semibold"
                 />
               </div>
 
               <div className="space-y-1">
-                <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">License Plate</label>
+                <label className="text-[8px] uppercase font-bold text-slate-400 tracking-wider">License Plate</label>
                 <input
                   id="vehicle-plate-input"
                   type="text"
@@ -1078,12 +1105,12 @@ export default function VehiclesTab({
                   value={licensePlate}
                   onChange={e => setLicensePlate(e.target.value)}
                   autoCapitalize="characters"
-                  className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none focus:border-indigo-500 font-semibold"
+                  className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs focus:outline-none focus:border-indigo-500 font-semibold"
                 />
               </div>
 
               <div className="col-span-2 space-y-1">
-                <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">
+                <label className="text-[8px] uppercase font-bold text-slate-400 tracking-wider">
                   Starting Odometer ({preferences.distanceUnit}) *
                 </label>
                 <input
@@ -1092,12 +1119,12 @@ export default function VehiclesTab({
                   placeholder="e.g. 45000"
                   value={currentOdometer}
                   onChange={e => setCurrentOdometer(e.target.value === '' ? '' : Number(e.target.value))}
-                  className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none focus:border-indigo-500 font-semibold"
+                  className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs focus:outline-none focus:border-indigo-500 font-semibold"
                 />
               </div>
 
               <div className="col-span-2 space-y-2">
-                <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider block">
+                <label className="text-[8px] uppercase font-bold text-slate-400 tracking-wider block">
                   Tag Colors
                 </label>
                 <div className="flex flex-wrap items-center gap-3">
@@ -1145,14 +1172,14 @@ export default function VehiclesTab({
               </div>
 
               <div className="col-span-2 space-y-1">
-                <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Notes</label>
+                <label className="text-[8px] uppercase font-bold text-slate-400 tracking-wider">Notes</label>
                 <textarea
                   id="vehicle-notes-input"
                   placeholder="Additional profile information (fuel specs, tire sizes, oils)"
                   rows={2}
                   value={notes}
                   onChange={e => setNotes(e.target.value)}
-                  className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none focus:border-indigo-500 font-medium"
+                  className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs focus:outline-none focus:border-indigo-500 font-medium"
                 />
               </div>
             </div>
@@ -1160,13 +1187,15 @@ export default function VehiclesTab({
             <button
               id="submit-vehicle-btn"
               type="submit"
-              className="w-full h-12 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-bold transition mt-2 cursor-pointer shadow-sm"
+              className="w-full h-12 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold transition mt-2 cursor-pointer shadow-sm"
             >
               Verify & Add Vehicle
             </button>
           </form>
-        </motion.div>
-      )}
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       {/* Vehicles Fleet List */}
       <div className="space-y-4">
@@ -1389,7 +1418,7 @@ export default function VehiclesTab({
               id="edit-vehicle-modal"
             >
               <div className="flex justify-between items-center pb-2 border-b border-slate-100">
-                <h3 className="text-sm font-extrabold text-slate-950 flex items-center gap-2">
+                <h3 className="text-xs font-extrabold text-slate-950 flex items-center gap-2">
                   <Car className="h-4 w-4 text-indigo-600" /> Edit Vehicle Profile
                 </h3>
                 <button 
@@ -1408,26 +1437,26 @@ export default function VehiclesTab({
                   </div>
                 )}
 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-2 gap-3 text-xs">
                   <div className="col-span-2 space-y-1">
-                    <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Nickname *</label>
+                    <label className="text-[8px] uppercase font-bold text-slate-400 tracking-wider">Nickname *</label>
                     <input
                       id="edit-vehicle-name-input"
                       type="text"
                       placeholder="e.g. My Civic, Family SUV"
                       value={editName}
                       onChange={e => setEditName(e.target.value)}
-                      className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none focus:border-indigo-500 font-semibold"
+                      className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs focus:outline-none focus:border-indigo-500 font-semibold"
                     />
                   </div>
 
                   <div className="space-y-1">
-                    <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Vehicle Type</label>
+                    <label className="text-[8px] uppercase font-bold text-slate-400 tracking-wider">Vehicle Type</label>
                     <select
                       id="edit-vehicle-type-select"
                       value={editVehicleType}
                       onChange={e => setEditVehicleType(e.target.value)}
-                      className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none focus:border-indigo-500 font-semibold cursor-pointer"
+                      className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs focus:outline-none focus:border-indigo-500 font-semibold cursor-pointer"
                     >
                       {VEHICLE_TYPES.map(type => (
                         <option key={type} value={type}>{type}</option>
@@ -1436,12 +1465,12 @@ export default function VehiclesTab({
                   </div>
 
                   <div className="space-y-1">
-                    <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Fuel Type</label>
+                    <label className="text-[8px] uppercase font-bold text-slate-400 tracking-wider">Fuel Type</label>
                     <select
                       id="edit-vehicle-fuel-select"
                       value={editFuelType}
                       onChange={e => setEditFuelType(e.target.value)}
-                      className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none focus:border-indigo-500 font-semibold cursor-pointer"
+                      className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs focus:outline-none focus:border-indigo-500 font-semibold cursor-pointer"
                     >
                       {FUEL_TYPES.map(type => (
                         <option key={type} value={type}>{type}</option>
@@ -1450,31 +1479,31 @@ export default function VehiclesTab({
                   </div>
 
                   <div className="space-y-1">
-                    <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Make (Optional)</label>
+                    <label className="text-[8px] uppercase font-bold text-slate-400 tracking-wider">Make (Optional)</label>
                     <input
                       id="edit-vehicle-make-input"
                       type="text"
                       placeholder="e.g. Honda, Ford"
                       value={editMake}
                       onChange={e => setEditMake(e.target.value)}
-                      className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none focus:border-indigo-500 font-semibold"
+                      className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs focus:outline-none focus:border-indigo-500 font-semibold"
                     />
                   </div>
 
                   <div className="space-y-1">
-                    <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Model (Optional)</label>
+                    <label className="text-[8px] uppercase font-bold text-slate-400 tracking-wider">Model (Optional)</label>
                     <input
                       id="edit-vehicle-model-input"
                       type="text"
                       placeholder="e.g. Civic Sport, F-150"
                       value={editModel}
                       onChange={e => setEditModel(e.target.value)}
-                      className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none focus:border-indigo-500 font-semibold"
+                      className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs focus:outline-none focus:border-indigo-500 font-semibold"
                     />
                   </div>
 
                   <div className="space-y-1">
-                    <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Year</label>
+                    <label className="text-[8px] uppercase font-bold text-slate-400 tracking-wider">Year</label>
                     <input
                       id="edit-vehicle-year-input"
                       type="number"
@@ -1482,12 +1511,12 @@ export default function VehiclesTab({
                       max={new Date().getFullYear() + 1}
                       value={editYear}
                       onChange={e => setEditYear(Number(e.target.value))}
-                      className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none focus:border-indigo-500 font-semibold"
+                      className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs focus:outline-none focus:border-indigo-500 font-semibold"
                     />
                   </div>
 
                   <div className="space-y-1">
-                    <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">License Plate</label>
+                    <label className="text-[8px] uppercase font-bold text-slate-400 tracking-wider">License Plate</label>
                     <input
                       id="edit-vehicle-plate-input"
                       type="text"
@@ -1495,12 +1524,12 @@ export default function VehiclesTab({
                       value={editLicensePlate}
                       onChange={e => setEditLicensePlate(e.target.value)}
                       autoCapitalize="characters"
-                      className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none focus:border-indigo-500 font-semibold"
+                      className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs focus:outline-none focus:border-indigo-500 font-semibold"
                     />
                   </div>
 
                   <div className="col-span-2 space-y-1">
-                    <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">
+                    <label className="text-[8px] uppercase font-bold text-slate-400 tracking-wider">
                       Current Odometer ({preferences.distanceUnit}) *
                     </label>
                     <input
@@ -1509,12 +1538,12 @@ export default function VehiclesTab({
                       placeholder="e.g. 45000"
                       value={editCurrentOdometer}
                       onChange={e => setEditCurrentOdometer(e.target.value === '' ? '' : Number(e.target.value))}
-                      className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none focus:border-indigo-500 font-semibold"
+                      className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs focus:outline-none focus:border-indigo-500 font-semibold"
                     />
                   </div>
 
                   <div className="col-span-2 space-y-2">
-                    <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider block">
+                    <label className="text-[8px] uppercase font-bold text-slate-400 tracking-wider block">
                       Tag Colors
                     </label>
                     <div className="flex flex-wrap items-center gap-3">
@@ -1562,14 +1591,14 @@ export default function VehiclesTab({
                   </div>
 
                   <div className="col-span-2 space-y-1">
-                    <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Notes</label>
+                    <label className="text-[8px] uppercase font-bold text-slate-400 tracking-wider">Notes</label>
                     <textarea
                       id="edit-vehicle-notes-input"
                       placeholder="Additional profile information (fuel specs, tire sizes, oils)"
                       rows={2}
                       value={editNotes}
                       onChange={e => setEditNotes(e.target.value)}
-                      className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none focus:border-indigo-500 font-medium"
+                      className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs focus:outline-none focus:border-indigo-500 font-medium"
                     />
                   </div>
                 </div>
@@ -1618,7 +1647,7 @@ export default function VehiclesTab({
               id="activity-detail-modal"
             >
               <div className="flex justify-between items-center pb-2 border-b border-slate-100">
-                <h3 className="text-sm font-extrabold text-slate-950 flex items-center gap-2">
+                <h3 className={`${isEditingActivity ? 'text-xs' : 'text-sm'} font-extrabold text-slate-950 flex items-center gap-2`}>
                   {selectedActivity.type === 'refill' && <Droplet className="h-4 w-4 text-emerald-600" />}
                   {selectedActivity.type === 'odometer' && <Gauge className="h-4 w-4 text-amber-500" />}
                   {selectedActivity.type === 'maintenance' && <Wrench className="h-4 w-4 text-indigo-600" />}
@@ -1783,20 +1812,20 @@ export default function VehiclesTab({
               {/* EDIT FORM MODE */}
               {isEditingActivity && (
                 <div className="space-y-4">
-                  <div className="grid grid-cols-2 gap-3 text-slate-800">
+                  <div className="grid grid-cols-2 gap-3 text-slate-800 text-xs">
                     <div className="space-y-1 col-span-2">
-                      <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Date *</label>
+                      <label className="text-[8px] uppercase font-bold text-slate-400 tracking-wider">Date *</label>
                       <input
                         id="act-date-input"
                         type="date"
                         value={actDate}
                         onChange={e => setActDate(e.target.value)}
-                        className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none focus:border-indigo-500 font-semibold"
+                        className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs focus:outline-none focus:border-indigo-500 font-semibold"
                       />
                     </div>
 
                     <div className="space-y-1 col-span-2">
-                      <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">
+                      <label className="text-[8px] uppercase font-bold text-slate-400 tracking-wider">
                         Odometer Reading ({preferences.distanceUnit}) *
                       </label>
                       <input
@@ -1804,67 +1833,13 @@ export default function VehiclesTab({
                         type="number"
                         value={actOdometer}
                         onChange={e => setActOdometer(e.target.value === '' ? '' : Number(e.target.value))}
-                        className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none focus:border-indigo-500 font-semibold"
+                        className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs focus:outline-none focus:border-indigo-500 font-semibold"
                       />
                     </div>
 
                     {/* Fuel Refill Fields */}
                     {selectedActivity.type === 'refill' && (
                       <>
-                        <div className="space-y-1">
-                          <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Volume ({preferences.volumeUnit}) *</label>
-                          <input
-                            id="act-volume-input"
-                            type="number"
-                            step="any"
-                            value={actVolume}
-                            onChange={e => setActVolume(e.target.value === '' ? '' : Number(e.target.value))}
-                            className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none focus:border-indigo-500 font-semibold"
-                          />
-                        </div>
-                        <div className="space-y-1">
-                          <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Price per {preferences.volumeUnit} *</label>
-                          <input
-                            id="act-price-input"
-                            type="number"
-                            step="any"
-                            value={actPricePerUnit}
-                            onChange={e => setActPricePerUnit(e.target.value === '' ? '' : Number(e.target.value))}
-                            className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none focus:border-indigo-500 font-semibold"
-                          />
-                        </div>
-                        <div className="space-y-1">
-                          <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Total Cost</label>
-                          <input
-                            id="act-cost-input"
-                            type="number"
-                            step="any"
-                            placeholder="Optional"
-                            value={actTotalCost}
-                            onChange={e => setActTotalCost(e.target.value === '' ? '' : Number(e.target.value))}
-                            className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none focus:border-indigo-500 font-semibold"
-                          />
-                        </div>
-                        <div className="space-y-1">
-                          <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Gas Station</label>
-                          <input
-                            id="act-station-input"
-                            type="text"
-                            value={actGasStation}
-                            onChange={e => setActGasStation(e.target.value)}
-                            className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none focus:border-indigo-500 font-semibold"
-                          />
-                        </div>
-                        <div className="space-y-1 col-span-2">
-                          <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Fuel Brand</label>
-                          <input
-                            id="act-brand-input"
-                            type="text"
-                            value={actFuelBrand}
-                            onChange={e => setActFuelBrand(e.target.value)}
-                            className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none focus:border-indigo-500 font-semibold"
-                          />
-                        </div>
                         <div className="col-span-2 flex items-center gap-2 py-1">
                           <input
                             id="act-fulltank-checkbox"
@@ -1873,9 +1848,64 @@ export default function VehiclesTab({
                             onChange={e => setActFullTank(e.target.checked)}
                             className="w-4 h-4 text-indigo-600 rounded border-slate-200 focus:ring-indigo-500 cursor-pointer"
                           />
-                          <label htmlFor="act-fulltank-checkbox" className="text-xs font-bold text-slate-700 cursor-pointer select-none">
+                          <label htmlFor="act-fulltank-checkbox" className="text-[10px] font-bold text-slate-700 cursor-pointer select-none">
                             Filled to Full Tank
                           </label>
+                        </div>
+
+                        <div className="space-y-1">
+                          <label className="text-[8px] uppercase font-bold text-slate-400 tracking-wider">Volume ({preferences.volumeUnit}) *</label>
+                          <input
+                            id="act-volume-input"
+                            type="number"
+                            step="any"
+                            value={actVolume}
+                            onChange={e => setActVolume(e.target.value === '' ? '' : Number(e.target.value))}
+                            className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs focus:outline-none focus:border-indigo-500 font-semibold"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-[8px] uppercase font-bold text-slate-400 tracking-wider">Price per {preferences.volumeUnit} *</label>
+                          <input
+                            id="act-price-input"
+                            type="number"
+                            step="any"
+                            value={actPricePerUnit}
+                            onChange={e => setActPricePerUnit(e.target.value === '' ? '' : Number(e.target.value))}
+                            className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs focus:outline-none focus:border-indigo-500 font-semibold"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-[8px] uppercase font-bold text-slate-400 tracking-wider">Total Cost</label>
+                          <input
+                            id="act-cost-input"
+                            type="number"
+                            step="any"
+                            placeholder="Optional"
+                            value={actTotalCost}
+                            onChange={e => setActTotalCost(e.target.value === '' ? '' : Number(e.target.value))}
+                            className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs focus:outline-none focus:border-indigo-500 font-semibold"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-[8px] uppercase font-bold text-slate-400 tracking-wider">Gas Station</label>
+                          <input
+                            id="act-station-input"
+                            type="text"
+                            value={actGasStation}
+                            onChange={e => setActGasStation(e.target.value)}
+                            className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs focus:outline-none focus:border-indigo-500 font-semibold"
+                          />
+                        </div>
+                        <div className="space-y-1 col-span-2">
+                          <label className="text-[8px] uppercase font-bold text-slate-400 tracking-wider">Fuel Brand</label>
+                          <input
+                            id="act-brand-input"
+                            type="text"
+                            value={actFuelBrand}
+                            onChange={e => setActFuelBrand(e.target.value)}
+                            className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs focus:outline-none focus:border-indigo-500 font-semibold"
+                          />
                         </div>
                       </>
                     )}
@@ -1884,53 +1914,53 @@ export default function VehiclesTab({
                     {selectedActivity.type === 'maintenance' && (
                       <>
                         <div className="space-y-1 col-span-2">
-                          <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Service Name *</label>
+                          <label className="text-[8px] uppercase font-bold text-slate-400 tracking-wider">Service Name *</label>
                           <input
                             id="act-servicetype-input"
                             type="text"
                             value={actServiceType}
                             onChange={e => setActServiceType(e.target.value)}
-                            className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none focus:border-indigo-500 font-semibold"
+                            className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs focus:outline-none focus:border-indigo-500 font-semibold"
                           />
                         </div>
                         <div className="space-y-1 col-span-2">
-                          <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Description (Optional)</label>
+                          <label className="text-[8px] uppercase font-bold text-slate-400 tracking-wider">Description (Optional)</label>
                           <input
                             id="act-title-input"
                             type="text"
                             placeholder="e.g. 10,000 mi maintenance check"
                             value={actTitle}
                             onChange={e => setActTitle(e.target.value)}
-                            className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none focus:border-indigo-500 font-semibold"
+                            className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs focus:outline-none focus:border-indigo-500 font-semibold"
                           />
                         </div>
                         <div className="space-y-1">
-                          <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Cost</label>
+                          <label className="text-[8px] uppercase font-bold text-slate-400 tracking-wider">Cost</label>
                           <input
                             id="act-maintcost-input"
                             type="number"
                             value={actCost}
                             onChange={e => setActCost(e.target.value === '' ? '' : Number(e.target.value))}
-                            className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none focus:border-indigo-500 font-semibold"
+                            className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs focus:outline-none focus:border-indigo-500 font-semibold"
                           />
                         </div>
                         <div className="space-y-1">
-                          <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Provider</label>
+                          <label className="text-[8px] uppercase font-bold text-slate-400 tracking-wider">Provider</label>
                           <input
                             id="act-provider-input"
                             type="text"
                             value={actProvider}
                             onChange={e => setActProvider(e.target.value)}
-                            className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none focus:border-indigo-500 font-semibold"
+                            className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs focus:outline-none focus:border-indigo-500 font-semibold"
                           />
                         </div>
                         <div className="space-y-1 col-span-2">
-                          <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Status</label>
+                          <label className="text-[8px] uppercase font-bold text-slate-400 tracking-wider">Status</label>
                           <select
                             id="act-status-select"
                             value={actStatus}
                             onChange={e => setActStatus(e.target.value as any)}
-                            className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none focus:border-indigo-500 font-semibold cursor-pointer"
+                            className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs focus:outline-none focus:border-indigo-500 font-semibold cursor-pointer"
                           >
                             <option value="Completed">Completed</option>
                             <option value="Scheduled">Scheduled</option>
@@ -1941,7 +1971,7 @@ export default function VehiclesTab({
 
                     {(selectedActivity.type === 'refill' || (selectedActivity.type === 'maintenance' && actStatus === 'Completed')) && !selectedActivity.receiptPhoto && (
                       <div className="space-y-1 col-span-2">
-                        <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider block">Receipt Photo (Optional)</label>
+                        <label className="text-[8px] uppercase font-bold text-slate-400 tracking-wider block">Receipt Photo (Optional)</label>
                         <div className="flex items-center gap-2.5">
                           <input
                             id="act-receipt-photo-upload"
@@ -1978,14 +2008,14 @@ export default function VehiclesTab({
                     )}
 
                     <div className="space-y-1 col-span-2">
-                      <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Notes</label>
+                      <label className="text-[8px] uppercase font-bold text-slate-400 tracking-wider">Notes</label>
                       <textarea
                         id="act-notes-input"
                         placeholder="Additional details..."
                         rows={2.5}
                         value={actNotes}
                         onChange={e => setActNotes(e.target.value)}
-                        className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none focus:border-indigo-500 font-medium"
+                        className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs focus:outline-none focus:border-indigo-500 font-medium"
                       />
                     </div>
                   </div>
