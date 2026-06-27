@@ -32,13 +32,13 @@ export default function MobileFrame({
   const [showQuickMenu, setShowQuickMenu] = useState(false);
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center font-sans select-none" id="mobile-app-shell">
+    <div className="min-h-screen min-h-[100dvh] bg-slate-50 flex flex-col items-center justify-center font-sans select-none" id="mobile-app-shell">
       {/* Visual background atmospheric lights on desktop */}
       <div className="absolute top-1/4 left-1/4 w-[400px] h-[400px] bg-indigo-500/5 rounded-full blur-3xl pointer-events-none hidden md:block" />
       <div className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] bg-emerald-500/5 rounded-full blur-3xl pointer-events-none hidden md:block" />
 
       {/* Main Bezel-Phone Container */}
-      <div className="w-full max-w-md min-h-screen md:min-h-[850px] md:h-[850px] bg-slate-50 border-0 md:border-[10px] md:border-slate-200 md:rounded-[42px] flex flex-col relative overflow-hidden shadow-2xl shadow-slate-350/40">
+      <div className="w-full max-w-md h-screen h-[100dvh] md:h-[850px] md:max-h-[90vh] bg-slate-50 border-0 md:border-[10px] md:border-slate-200 md:rounded-[42px] flex flex-col relative overflow-hidden shadow-2xl shadow-slate-350/40">
         
         {/* Global Toolbar Header - Settings, App Title */}
         <header className="h-14 bg-white border-b border-slate-200 px-5 flex justify-between items-center z-30 shrink-0 md:rounded-t-[32px]">
