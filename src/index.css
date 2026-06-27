@@ -15,3 +15,16 @@ html, body, #root {
   overflow: hidden;
   position: fixed;
 }
+
+/* Prevent auto-zooming on focus in iOS Safari by ensuring input font-size is at least 16px on mobile */
+@media (max-width: 767px) {
+  input, 
+  select, 
+  textarea,
+  input:focus,
+  select:focus,
+  textarea:focus {
+    font-size: 16px !important;
+  }
+}
+
