@@ -12,6 +12,7 @@ interface RemindersTabProps {
   onDeleteReminder: (id: string) => void;
   showAddFormImmediately?: boolean;
   onCloseImmediateForm?: () => void;
+  onShowAddFormChange?: (show: boolean) => void;
 }
 
 const REMINDER_TYPES = [
@@ -28,9 +29,14 @@ export default function RemindersTab({
   onUpdateReminderStatus,
   onDeleteReminder,
   showAddFormImmediately = false,
-  onCloseImmediateForm
+  onCloseImmediateForm,
+  onShowAddFormChange
 }: RemindersTabProps) {
   const [showAddForm, setShowAddForm] = useState(showAddFormImmediately);
+
+  useEffect(() => {
+    onShowAddFormChange?.(showAddForm);
+  }, [showAddForm, onShowAddFormChange]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [vehicleId, setVehicleId] = useState<string | 'all'>('all');
   const [type, setType] = useState<'License' | 'Registration' | 'Insurance' | 'Other'>('Registration');

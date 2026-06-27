@@ -129,9 +129,6 @@ export default function DashboardTab({
           <h2 className="text-xl font-sans tracking-tight font-bold text-slate-900">Dashboard</h2>
           <p className="text-slate-500 text-xs">Fleet management dashboard</p>
         </div>
-        <div className="h-10 w-10 rounded-full bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-650 font-bold text-sm">
-          JD
-        </div>
       </div>
 
       {/* 2. Horizontal Vehicle Selector */}
@@ -147,38 +144,35 @@ export default function DashboardTab({
           </button>
         </div>
         
-        <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-none px-1">
-          <button
-            id="select-vehicle-all-btn"
-            onClick={() => setSelectedVehicleId('all')}
-            className={`flex items-center px-4 py-2.5 rounded-2xl border text-sm font-semibold transition shrink-0 duration-200 ${
-              selectedVehicleId === 'all'
-                ? 'bg-indigo-600 border-indigo-500 text-white shadow-sm'
-                : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
-            }`}
+        <div className="relative px-1">
+          <select
+            id="vehicle-select-dropdown"
+            value={selectedVehicleId}
+            onChange={(e) => setSelectedVehicleId(e.target.value)}
+            className="w-full h-11 pl-11 pr-10 bg-white border border-slate-200 rounded-2xl text-slate-700 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 appearance-none cursor-pointer transition shadow-sm"
           >
-            <Car className="h-4 w-4 mr-2" />
-            All Vehicles
-          </button>
-          
-          {vehicles.map(v => (
-            <button
-              id={`select-vehicle-${v.id}-btn`}
-              key={v.id}
-              onClick={() => setSelectedVehicleId(v.id)}
-              className={`flex items-center px-4 py-2.5 rounded-2xl border text-sm font-semibold transition shrink-0 duration-200 ${
-                selectedVehicleId === v.id
-                  ? 'bg-indigo-600 border-indigo-500 text-white shadow-sm'
-                  : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
-              }`}
-            >
+            <option value="all">All Vehicles</option>
+            {vehicles.map(v => (
+              <option key={v.id} value={v.id}>
+                {v.name} {v.licensePlate ? `(${v.licensePlate})` : ''}
+              </option>
+            ))}
+          </select>
+          <div className="absolute left-5 top-1/2 -translate-y-1/2 pointer-events-none flex items-center">
+            {selectedVehicleId === 'all' ? (
+              <Car className="h-4 w-4 text-indigo-600" />
+            ) : (
               <span 
-                className="w-2.5 h-2.5 rounded-full mr-2 block shrink-0" 
-                style={{ backgroundColor: v.color }}
+                className="w-3 h-3 rounded-full block border border-slate-100 shadow-sm" 
+                style={{ backgroundColor: vehicles.find(v => v.id === selectedVehicleId)?.color || '#6366f1' }}
               />
-              <span className="max-w-[120px] truncate">{v.name}</span>
-            </button>
-          ))}
+            )}
+          </div>
+          <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none flex items-center">
+            <svg className="h-4 w-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+            </svg>
+          </div>
         </div>
       </div>
 

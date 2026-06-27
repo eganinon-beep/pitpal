@@ -158,6 +158,16 @@ export default function App() {
   const [quickAddMaint, setQuickAddMaint] = useState(false);
   const [quickAddReminder, setQuickAddReminder] = useState(false);
 
+  // States to hide FAB
+  const [isAddingVehicle, setIsAddingVehicle] = useState(false);
+  const [isAddingDocument, setIsAddingDocument] = useState(false);
+
+  // Reset adding states when changing tabs
+  useEffect(() => {
+    setIsAddingVehicle(false);
+    setIsAddingDocument(false);
+  }, [activeTab]);
+
   // Update Mileage Quick Action States
   const [showUpdateMileageModal, setShowUpdateMileageModal] = useState(false);
   const [updateMileageVehicleId, setUpdateMileageVehicleId] = useState('');
@@ -525,6 +535,7 @@ export default function App() {
       onOpenQuickLogRefill={handleOpenQuickLogRefill}
       onOpenQuickLogMaintenance={handleOpenQuickLogMaintenance}
       onOpenUpdateMileage={handleOpenUpdateMileage}
+      hideQuickAction={isAddingVehicle || isAddingDocument}
     >
       {/* 1. DASHBOARD VIEW */}
       {activeTab === 'dashboard' && (
@@ -537,7 +548,17 @@ export default function App() {
           selectedVehicleId={selectedVehicleId}
           setSelectedVehicleId={setSelectedVehicleId}
           onNavigateToTab={(tabId) => {
-            setActiveTab(tabId);
+            if (tabId === 'maintenance') {
+              setActiveTab('vehicles');
+              setDetailSubTab('services');
+              if (selectedVehicleId !== 'all') {
+                setSelectedDetailVehicleId(selectedVehicleId);
+              } else if (vehicles.length > 0) {
+                setSelectedDetailVehicleId(vehicles[0].id);
+              }
+            } else {
+              setActiveTab(tabId);
+            }
           }}
         />
       )}
@@ -565,6 +586,7 @@ export default function App() {
           setDetailSubTab={setDetailSubTab}
           showAddFormInDetail={showAddFormInDetail}
           setShowAddFormInDetail={setShowAddFormInDetail}
+          onShowAddFormChange={setIsAddingVehicle}
         />
       )}
 
@@ -578,6 +600,7 @@ export default function App() {
           onDeleteReminder={handleDeleteReminder}
           showAddFormImmediately={quickAddReminder}
           onCloseImmediateForm={() => setQuickAddReminder(false)}
+          onShowAddFormChange={setIsAddingDocument}
         />
       )}
 
@@ -872,32 +895,32 @@ export default function App() {
                     </select>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
-                    {/* Date */}
-                    <div className="space-y-1">
-                      <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider block">Refill Date</label>
-                      <input
-                        id="quick-fuel-date-input"
-                        type="date"
-                        value={quickFuelDate}
-                        onChange={(e) => setQuickFuelDate(e.target.value)}
-                        className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none focus:border-indigo-500 font-semibold"
-                      />
-                    </div>
-
-                    {/* Odometer */}
-                    <div className="space-y-1">
-                      <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider block">Odometer ({preferences.distanceUnit})</label>
-                      <input
-                        id="quick-fuel-odometer-input"
-                        type="number"
-                        placeholder="Current reading"
-                        value={quickFuelOdometer}
-                        onChange={(e) => setQuickFuelOdometer(e.target.value === '' ? '' : Number(e.target.value))}
-                        className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none focus:border-indigo-500 font-semibold"
-                      />
-                    </div>
-                  </div>
+                   <div className="grid grid-cols-2 gap-4">
+                     {/* Date */}
+                     <div className="space-y-1 min-w-0">
+                       <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider block">Refill Date</label>
+                       <input
+                         id="quick-fuel-date-input"
+                         type="date"
+                         value={quickFuelDate}
+                         onChange={(e) => setQuickFuelDate(e.target.value)}
+                         className="w-full h-11 px-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none focus:border-indigo-500 font-semibold min-w-0"
+                       />
+                     </div>
+ 
+                     {/* Odometer */}
+                     <div className="space-y-1 min-w-0">
+                       <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider block">Odometer ({preferences.distanceUnit})</label>
+                       <input
+                         id="quick-fuel-odometer-input"
+                         type="number"
+                         placeholder="Current reading"
+                         value={quickFuelOdometer}
+                         onChange={(e) => setQuickFuelOdometer(e.target.value === '' ? '' : Number(e.target.value))}
+                         className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none focus:border-indigo-500 font-semibold min-w-0"
+                       />
+                     </div>
+                   </div>
 
                   <div className="grid grid-cols-3 gap-3">
                     {/* Fuel Volume */}
@@ -1270,40 +1293,40 @@ export default function App() {
                     </div>
                   )}
 
-                  <div className="grid grid-cols-2 gap-4">
-                    {/* Date Performed / Date Scheduled */}
-                    {!(quickMaintStatus === 'Scheduled' && quickMaintScheduleType === 'Mileage-Only') && (
-                      <div className="space-y-1">
-                        <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider block">
-                          {quickMaintStatus === 'Completed' ? 'Date Performed' : 'Scheduled Date'}
-                        </label>
-                        <input
-                          id="quick-maint-date-input"
-                          type="date"
-                          value={quickMaintDate}
-                          onChange={(e) => setQuickMaintDate(e.target.value)}
-                          className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none focus:border-indigo-500 font-semibold"
-                        />
-                      </div>
-                    )}
-
-                    {/* Odometer */}
-                    {!(quickMaintStatus === 'Scheduled' && quickMaintScheduleType === 'Calendar-Only') && (
-                      <div className="space-y-1 col-span-1">
-                        <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider block">
-                          {quickMaintStatus === 'Completed' ? `Odometer (${preferences.distanceUnit})` : `Target Odometer (${preferences.distanceUnit})`}
-                        </label>
-                        <input
-                          id="quick-maint-odometer-input"
-                          type="number"
-                          placeholder="Current mileage"
-                          value={quickMaintOdometer}
-                          onChange={(e) => setQuickMaintOdometer(e.target.value === '' ? '' : Number(e.target.value))}
-                          className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none focus:border-indigo-500 font-semibold"
-                        />
-                      </div>
-                    )}
-                  </div>
+                   <div className="grid grid-cols-2 gap-4">
+                     {/* Date Performed / Date Scheduled */}
+                     {!(quickMaintStatus === 'Scheduled' && quickMaintScheduleType === 'Mileage-Only') && (
+                       <div className="space-y-1 min-w-0">
+                         <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider block">
+                           {quickMaintStatus === 'Completed' ? 'Date Performed' : 'Scheduled Date'}
+                         </label>
+                         <input
+                           id="quick-maint-date-input"
+                           type="date"
+                           value={quickMaintDate}
+                           onChange={(e) => setQuickMaintDate(e.target.value)}
+                           className="w-full h-11 px-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none focus:border-indigo-500 font-semibold min-w-0"
+                         />
+                       </div>
+                     )}
+ 
+                     {/* Odometer */}
+                     {!(quickMaintStatus === 'Scheduled' && quickMaintScheduleType === 'Calendar-Only') && (
+                       <div className="space-y-1 col-span-1 min-w-0">
+                         <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider block">
+                           {quickMaintStatus === 'Completed' ? `Odometer (${preferences.distanceUnit})` : `Target Odometer (${preferences.distanceUnit})`}
+                         </label>
+                         <input
+                           id="quick-maint-odometer-input"
+                           type="number"
+                           placeholder="Current mileage"
+                           value={quickMaintOdometer}
+                           onChange={(e) => setQuickMaintOdometer(e.target.value === '' ? '' : Number(e.target.value))}
+                           className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none focus:border-indigo-500 font-semibold min-w-0"
+                         />
+                       </div>
+                     )}
+                   </div>
 
                   {quickMaintStatus === 'Completed' && (
                     <div className="grid grid-cols-2 gap-4">
@@ -1366,24 +1389,25 @@ export default function App() {
                               <option value="Calendar-Only">Calendar Only</option>
                               <option value="Mileage-Only">Mileage Only</option>
                             </select>
-                          </div>                           <div className="grid grid-cols-2 gap-3">
+                          </div>
+                          <div className="grid grid-cols-2 gap-3">
                             {/* Next Date */}
                             {quickMaintScheduleType !== 'Mileage-Only' && (
-                              <div className="space-y-1">
+                              <div className="space-y-1 min-w-0">
                                 <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider block">Due Date</label>
                                 <input
                                   id="quick-maint-next-date"
                                   type="date"
                                   value={quickMaintNextDueDate}
                                   onChange={(e) => setQuickMaintNextDueDate(e.target.value)}
-                                  className="w-full h-9 px-2.5 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 text-xs focus:outline-none focus:border-indigo-500 font-semibold"
+                                  className="w-full h-9 px-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 text-xs focus:outline-none focus:border-indigo-500 font-semibold min-w-0"
                                 />
                               </div>
                             )}
 
                             {/* Next Odometer */}
                             {quickMaintScheduleType !== 'Calendar-Only' && (
-                              <div className="space-y-1">
+                              <div className="space-y-1 min-w-0">
                                 <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider block">Due Odometer ({preferences.distanceUnit})</label>
                                 <input
                                   id="quick-maint-next-odo"
@@ -1391,7 +1415,7 @@ export default function App() {
                                   placeholder="Due mileage"
                                   value={quickMaintNextDueOdometer}
                                   onChange={(e) => setQuickMaintNextDueOdometer(e.target.value === '' ? '' : Number(e.target.value))}
-                                  className="w-full h-9 px-2.5 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 text-xs focus:outline-none focus:border-indigo-500 font-semibold"
+                                  className="w-full h-9 px-2.5 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 text-xs focus:outline-none focus:border-indigo-500 font-semibold min-w-0"
                                 />
                               </div>
                             )}

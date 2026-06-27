@@ -316,7 +316,7 @@ export default function MaintenanceTab({
                 {status === 'Completed' && (
                   <>
                     {/* Date */}
-                    <div className="space-y-1">
+                    <div className="space-y-1 min-w-0">
                       <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">
                         Date Performed *
                       </label>
@@ -325,12 +325,12 @@ export default function MaintenanceTab({
                         type="date"
                         value={date}
                         onChange={e => setDate(e.target.value)}
-                        className="w-full h-11 px-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none focus:border-indigo-500 cursor-pointer font-semibold"
+                        className="w-full h-11 px-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none focus:border-indigo-500 cursor-pointer font-semibold min-w-0"
                       />
                     </div>
 
                     {/* Odometer */}
-                    <div className="space-y-1">
+                    <div className="space-y-1 min-w-0">
                       <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">
                         Odometer Reading * ({preferences.distanceUnit})
                       </label>
@@ -363,7 +363,7 @@ export default function MaintenanceTab({
                       </select>
                     </div>
 
-                    <div className="space-y-1">
+                    <div className="space-y-1 min-w-0">
                       <label className={`text-[10px] uppercase font-bold tracking-wider ${scheduleType === 'Mileage-Only' ? 'text-slate-300' : 'text-slate-400'}`}>
                         Scheduled Date {scheduleType !== 'Mileage-Only' && '*'}
                       </label>
@@ -373,13 +373,13 @@ export default function MaintenanceTab({
                         disabled={scheduleType === 'Mileage-Only'}
                         value={date}
                         onChange={e => setDate(e.target.value)}
-                        className={`w-full h-11 px-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none focus:border-indigo-500 cursor-pointer font-semibold ${
+                        className={`w-full h-11 px-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none focus:border-indigo-500 cursor-pointer font-semibold min-w-0 ${
                           scheduleType === 'Mileage-Only' ? 'opacity-40 cursor-not-allowed bg-slate-100 border-slate-200' : ''
                         }`}
                       />
                     </div>
 
-                    <div className="space-y-1">
+                    <div className="space-y-1 min-w-0">
                       <label className={`text-[10px] uppercase font-bold tracking-wider ${scheduleType === 'Calendar-Only' ? 'text-slate-300' : 'text-slate-400'}`}>
                         Target Odometer {scheduleType !== 'Calendar-Only' && '*'} ({preferences.distanceUnit})
                       </label>
@@ -390,7 +390,7 @@ export default function MaintenanceTab({
                         disabled={scheduleType === 'Calendar-Only'}
                         value={odometer}
                         onChange={e => setOdometer(e.target.value === '' ? '' : Number(e.target.value))}
-                        className={`w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none focus:border-indigo-500 font-semibold ${
+                        className={`w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none focus:border-indigo-500 font-semibold min-w-0 ${
                           scheduleType === 'Calendar-Only' ? 'opacity-40 cursor-not-allowed bg-slate-100 border-slate-200' : ''
                         }`}
                       />
@@ -463,7 +463,7 @@ export default function MaintenanceTab({
                         </div>
 
                         <div className="grid grid-cols-2 gap-3 pb-1">
-                          <div className="space-y-1">
+                          <div className="space-y-1 min-w-0">
                             <label className={`text-[9px] uppercase font-black ${scheduleType === 'Mileage-Only' ? 'text-slate-300' : 'text-slate-400'}`}>
                               Next Service Date {scheduleType !== 'Mileage-Only' && '*'}
                             </label>
@@ -473,12 +473,12 @@ export default function MaintenanceTab({
                               disabled={scheduleType === 'Mileage-Only'}
                               value={nextDueDate}
                               onChange={e => setNextDueDate(e.target.value)}
-                              className={`w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 text-xs focus:outline-none font-semibold ${
+                              className={`w-full h-10 px-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 text-xs focus:outline-none font-semibold min-w-0 ${
                                 scheduleType === 'Mileage-Only' ? 'opacity-40 cursor-not-allowed bg-slate-100' : ''
                               }`}
                             />
                           </div>
-                          <div className="space-y-1">
+                          <div className="space-y-1 min-w-0">
                             <label className={`text-[9px] uppercase font-black ${scheduleType === 'Calendar-Only' ? 'text-slate-300' : 'text-slate-400'}`}>
                               Next Odometer {scheduleType !== 'Calendar-Only' && '*'} ({preferences.distanceUnit})
                             </label>

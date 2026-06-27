@@ -278,19 +278,19 @@ export default function FuelTab({
                 </div>
 
                 {/* Date */}
-                <div className="space-y-1">
+                <div className="space-y-1 min-w-0">
                   <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Refill Date</label>
                   <input
                     id="refill-date-input"
                     type="date"
                     value={date}
                     onChange={e => setDate(e.target.value)}
-                    className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none focus:border-indigo-500 cursor-pointer font-semibold"
+                    className="w-full h-11 px-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none focus:border-indigo-500 cursor-pointer font-semibold min-w-0"
                   />
                 </div>
 
                 {/* Odometer */}
-                <div className="space-y-1">
+                <div className="space-y-1 min-w-0">
                   <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">
                     Odometer Status ({preferences.distanceUnit})
                   </label>

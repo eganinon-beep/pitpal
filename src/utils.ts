@@ -134,7 +134,7 @@ export function formatDate(dateStr: string): string {
 /**
  * Get color scheme tailwind background utilities
  */
-export function getVehiclesColorMap(hex: string): { bg: string; text: string; border: string } {
+export function getVehiclesColorMap(hex: string): { bg: string; text: string; border: string; style?: any } {
   const map: { [key: string]: { bg: string; text: string; border: string } } = {
     '#0ea5e9': { bg: 'bg-sky-500/10', text: 'text-sky-400', border: 'border-sky-500/30' },
     '#10b981': { bg: 'bg-emerald-500/10', text: 'text-emerald-400', border: 'border-emerald-500/30' },
@@ -144,5 +144,19 @@ export function getVehiclesColorMap(hex: string): { bg: string; text: string; bo
     '#ec4899': { bg: 'bg-pink-500/10', text: 'text-pink-400', border: 'border-pink-500/30' },
   };
 
-  return map[hex] || { bg: 'bg-slate-500/10', text: 'text-slate-400', border: 'border-slate-500/30' };
+  if (map[hex]) {
+    return map[hex];
+  }
+
+  // Fallback support for any custom hex color
+  return {
+    bg: '',
+    text: '',
+    border: '',
+    style: {
+      backgroundColor: `${hex}1a`, // 10% opacity in hex
+      color: hex,
+      borderColor: `${hex}4d`, // 30% opacity in hex
+    }
+  };
 }

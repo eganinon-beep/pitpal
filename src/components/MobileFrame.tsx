@@ -16,6 +16,7 @@ interface MobileFrameProps {
   onOpenQuickLogRefill: () => void;
   onOpenQuickLogMaintenance: () => void;
   onOpenUpdateMileage: () => void;
+  hideQuickAction?: boolean;
 }
 
 export default function MobileFrame({
@@ -26,10 +27,17 @@ export default function MobileFrame({
   onUpdatePreferences,
   onOpenQuickLogRefill,
   onOpenQuickLogMaintenance,
-  onOpenUpdateMileage
+  onOpenUpdateMileage,
+  hideQuickAction = false
 }: MobileFrameProps) {
   const [showPreferencesMenu, setShowPreferencesMenu] = useState(false);
   const [showQuickMenu, setShowQuickMenu] = useState(false);
+
+  React.useEffect(() => {
+    if (hideQuickAction) {
+      setShowQuickMenu(false);
+    }
+  }, [hideQuickAction]);
 
   return (
     <div className="w-full h-full h-[100dvh] bg-slate-50 flex flex-col items-center justify-center font-sans select-none" id="mobile-app-shell">
@@ -205,86 +213,88 @@ export default function MobileFrame({
         </main>
 
         {/* Global Floating Action Button Overlay & Button */}
-        <>
-          <AnimatePresence>
-            {showQuickMenu && (
-              <motion.div
-                id="fab-backdrop"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 0.25 }}
-                exit={{ opacity: 0 }}
-                onClick={() => setShowQuickMenu(false)}
-                className="absolute inset-0 bg-slate-950 z-35 md:rounded-[32px]"
-              />
-            )}
-          </AnimatePresence>
-
-          <div className="absolute bottom-[72px] right-6 z-40">
-            <button
-              id="fab-quick-action-btn"
-              onClick={() => setShowQuickMenu(!showQuickMenu)}
-              className={`h-14 w-14 rounded-full text-white bg-indigo-600 border border-indigo-500 shadow-xl transition flex items-center justify-center hover:bg-black hover:border-black cursor-pointer ${
-                showQuickMenu ? 'rotate-45 bg-slate-900 hover:bg-black border-slate-900 shadow-slate-950/20' : 'shadow-indigo-600/20'
-              }`}
-            >
-              <Plus className="h-6 w-6" />
-            </button>
-
+        {!hideQuickAction && (
+          <>
             <AnimatePresence>
               {showQuickMenu && (
                 <motion.div
-                  initial={{ opacity: 0, scale: 0.9, y: 15 }}
-                  animate={{ opacity: 1, scale: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.9, y: 15 }}
-                  className="absolute bottom-16 right-0 bg-white border border-slate-200 p-3.5 rounded-3xl shadow-2xl w-56 z-40 space-y-2.5 overflow-hidden text-slate-800"
-                  id="fab-action-menu"
-                >
-                  <button
-                    id="fab-refill-btn"
-                    onClick={() => {
-                      setShowQuickMenu(false);
-                      onOpenQuickLogRefill();
-                    }}
-                    className="flex items-center gap-3 px-2 py-2 h-10 w-full hover:bg-indigo-50 rounded-xl transition text-left text-slate-700 hover:text-indigo-600 cursor-pointer animate-none"
-                  >
-                    <div className="p-1.5 bg-emerald-50 text-emerald-600 rounded-lg">
-                      <Droplet className="h-4 w-4" />
-                    </div>
-                    <span className="text-xs font-semibold">Record Fuel Refill</span>
-                  </button>
-
-                  <button
-                    id="fab-maintenance-btn"
-                    onClick={() => {
-                      setShowQuickMenu(false);
-                      onOpenQuickLogMaintenance();
-                    }}
-                    className="flex items-center gap-3 px-2 py-2 h-10 w-full hover:bg-indigo-50 rounded-xl transition text-left text-slate-700 hover:text-indigo-600 cursor-pointer animate-none"
-                  >
-                    <div className="p-1.5 bg-indigo-50 text-indigo-600 rounded-lg">
-                      <Wrench className="h-4 w-4" />
-                    </div>
-                    <span className="text-xs font-semibold">Record Service</span>
-                  </button>
-
-                  <button
-                    id="fab-update-mileage-btn"
-                    onClick={() => {
-                      setShowQuickMenu(false);
-                      onOpenUpdateMileage();
-                    }}
-                    className="flex items-center gap-3 px-2 py-2 h-10 w-full hover:bg-indigo-50 rounded-xl transition text-left text-slate-700 hover:text-indigo-600 cursor-pointer animate-none"
-                  >
-                    <div className="p-1.5 bg-amber-50 text-amber-600 rounded-lg">
-                      <Gauge className="h-4 w-4" />
-                    </div>
-                    <span className="text-xs font-semibold">Record Mileage</span>
-                  </button>
-                </motion.div>
+                  id="fab-backdrop"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 0.25 }}
+                  exit={{ opacity: 0 }}
+                  onClick={() => setShowQuickMenu(false)}
+                  className="absolute inset-0 bg-slate-950 z-35 md:rounded-[32px]"
+                />
               )}
             </AnimatePresence>
-          </div>
-        </>
+
+            <div className="absolute bottom-[72px] right-6 z-40">
+              <button
+                id="fab-quick-action-btn"
+                onClick={() => setShowQuickMenu(!showQuickMenu)}
+                className={`h-14 w-14 rounded-full text-white bg-indigo-600 border border-indigo-500 shadow-xl transition flex items-center justify-center hover:bg-black hover:border-black cursor-pointer ${
+                  showQuickMenu ? 'rotate-45 bg-slate-900 hover:bg-black border-slate-900 shadow-slate-950/20' : 'shadow-indigo-600/20'
+                }`}
+              >
+                <Plus className="h-6 w-6" />
+              </button>
+
+              <AnimatePresence>
+                {showQuickMenu && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.9, y: 15 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.9, y: 15 }}
+                    className="absolute bottom-16 right-0 bg-white border border-slate-200 p-3.5 rounded-3xl shadow-2xl w-56 z-40 space-y-2.5 overflow-hidden text-slate-800"
+                    id="fab-action-menu"
+                  >
+                    <button
+                      id="fab-refill-btn"
+                      onClick={() => {
+                        setShowQuickMenu(false);
+                        onOpenQuickLogRefill();
+                      }}
+                      className="flex items-center gap-3 px-2 py-2 h-10 w-full hover:bg-indigo-50 rounded-xl transition text-left text-slate-700 hover:text-indigo-600 cursor-pointer animate-none"
+                    >
+                      <div className="p-1.5 bg-emerald-50 text-emerald-600 rounded-lg">
+                        <Droplet className="h-4 w-4" />
+                      </div>
+                      <span className="text-xs font-semibold">Record Fuel Refill</span>
+                    </button>
+
+                    <button
+                      id="fab-maintenance-btn"
+                      onClick={() => {
+                        setShowQuickMenu(false);
+                        onOpenQuickLogMaintenance();
+                      }}
+                      className="flex items-center gap-3 px-2 py-2 h-10 w-full hover:bg-indigo-50 rounded-xl transition text-left text-slate-700 hover:text-indigo-600 cursor-pointer animate-none"
+                    >
+                      <div className="p-1.5 bg-indigo-50 text-indigo-600 rounded-lg">
+                        <Wrench className="h-4 w-4" />
+                      </div>
+                      <span className="text-xs font-semibold">Record Service</span>
+                    </button>
+
+                    <button
+                      id="fab-update-mileage-btn"
+                      onClick={() => {
+                        setShowQuickMenu(false);
+                        onOpenUpdateMileage();
+                      }}
+                      className="flex items-center gap-3 px-2 py-2 h-10 w-full hover:bg-indigo-50 rounded-xl transition text-left text-slate-700 hover:text-indigo-600 cursor-pointer animate-none"
+                    >
+                      <div className="p-1.5 bg-amber-50 text-amber-600 rounded-lg">
+                        <Gauge className="h-4 w-4" />
+                      </div>
+                      <span className="text-xs font-semibold">Record Mileage</span>
+                    </button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          </>
+        )}
 
         {/* Bottom Tab Navigation Bar */}
         <nav className="h-16 bg-white border-t border-slate-250 pb-2.5 flex items-center justify-around z-30 shrink-0 text-slate-400 md:rounded-b-[32px]">

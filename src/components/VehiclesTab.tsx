@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Car, Plus, Trash2, Calendar, FileText, Check, X, Edit, Gauge, Truck, Bike, Droplet, Wrench, Bus, Camera, ImageIcon } from 'lucide-react';
+import { Car, Plus, Trash2, Calendar, FileText, Check, X, Edit, Gauge, Truck, Bike, Droplet, Wrench, Bus, Camera, ImageIcon, Pipette } from 'lucide-react';
 import { Vehicle, FuelRefill, MaintenanceLog, UserPreferences } from '../types';
 import { formatCurrency, getVehiclesColorMap, formatDate } from '../utils';
 import FuelTab from './FuelTab';
@@ -28,6 +28,7 @@ interface VehiclesTabProps {
   setDetailSubTab: (tab: 'refills' | 'services') => void;
   showAddFormInDetail: boolean;
   setShowAddFormInDetail: (show: boolean) => void;
+  onShowAddFormChange?: (show: boolean) => void;
 }
 
 const VEHICLE_COLORS = [
@@ -35,27 +36,54 @@ const VEHICLE_COLORS = [
   '#10b981', // Emerald
   '#f59e0b', // Amber
   '#ef4444', // Rose
-  '#8b5cf6', // Violet
   '#ec4899', // Pink
 ];
 
-export const VEHICLE_TYPES = ['Sedan', 'SUV', 'Truck', 'Hatchback', 'Van', 'Motorcycle', 'Coupe', 'Convertible', 'MPV', 'AUV', 'Crossover', 'Pick-up Truck', 'Bus', 'Other'];
+export const VEHICLE_TYPES = ['AUV', 'Bus', 'Convertible', 'Coupe', 'Crossover', 'Hatchback', 'Motorcycle', 'MPV', 'Pickup Truck', 'Sedan', 'SUV', 'Truck', 'Van', 'Other'];
 export const FUEL_TYPES = ['Gasoline', 'Diesel', 'Electric', 'Hybrid', 'Plug-in Hybrid', 'Other'];
+
+export function PickupTruckIcon({ className = "h-5 w-5" }: { className?: string }) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+    >
+      {/* Wheels */}
+      <circle cx="7" cy="18" r="2" />
+      <circle cx="17" cy="18" r="2" />
+      
+      {/* Body outline */}
+      <path d="M5 18H2V13h9V8h4.5l3.5 5h3v4a1 1 0 0 1-1 1h-2" />
+      
+      {/* Bottom chassis line between wheels */}
+      <path d="M9 18h6" />
+      
+      {/* Cab and Bed separation line */}
+      <path d="M11 13v5" />
+      
+      {/* Cab window */}
+      <path d="M12 12V10h2.5l1.5 2Z" />
+    </svg>
+  );
+}
 
 export function getVehicleIcon(vehicleType?: string, className: string = "h-5 w-5") {
   const type = (vehicleType || '').toLowerCase();
   switch (type) {
-    case 'truck':
     case 'pick-up truck':
+    case 'pickup truck':
+      return <PickupTruckIcon className={className} />;
+    case 'truck':
       return <Truck className={className} />;
     case 'motorcycle':
       return <Bike className={className} />;
     case 'van':
-      return <Truck className={className} />;
-    case 'suv':
-    case 'mpv':
-    case 'auv':
-    case 'crossover':
       return <Truck className={className} />;
     case 'bus':
       return <Bus className={className} />;
@@ -84,9 +112,14 @@ export default function VehiclesTab({
   detailSubTab,
   setDetailSubTab,
   showAddFormInDetail,
-  setShowAddFormInDetail
+  setShowAddFormInDetail,
+  onShowAddFormChange
  }: VehiclesTabProps) {
   const [showAddForm, setShowAddForm] = useState(false);
+
+  React.useEffect(() => {
+    onShowAddFormChange?.(showAddForm);
+  }, [showAddForm, onShowAddFormChange]);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [name, setName] = useState('');
   const [vehicleType, setVehicleType] = useState('Sedan');
@@ -475,7 +508,7 @@ export default function VehiclesTab({
               style={{ backgroundColor: v.color }}
             />
             <div className="flex gap-3">
-              <div className={`p-3 rounded-2xl shrink-0 ${colorScheme.bg} ${colorScheme.text} border ${colorScheme.border}`}>
+              <div className={`p-3 rounded-2xl shrink-0 ${colorScheme.bg} ${colorScheme.text} border ${colorScheme.border}`} style={colorScheme.style}>
                 {getVehicleIcon(v.vehicleType)}
               </div>
               <div>
@@ -1044,6 +1077,7 @@ export default function VehiclesTab({
                   placeholder="e.g. 7XYZ89"
                   value={licensePlate}
                   onChange={e => setLicensePlate(e.target.value)}
+                  autoCapitalize="characters"
                   className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none focus:border-indigo-500 font-semibold"
                 />
               </div>
@@ -1066,7 +1100,7 @@ export default function VehiclesTab({
                 <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider block">
                   Tag Colors
                 </label>
-                <div className="flex gap-3">
+                <div className="flex flex-wrap items-center gap-3">
                   {VEHICLE_COLORS.map(c => (
                     <button
                       id={`color-picker-${c.replace('#','')}`}
@@ -1083,6 +1117,30 @@ export default function VehiclesTab({
                       {color === c && <Check className="h-4 w-4 text-white" />}
                     </button>
                   ))}
+
+                  {/* Custom color picker */}
+                  <div 
+                    className="relative w-8 h-8 rounded-full border-2 transition flex items-center justify-center shrink-0 cursor-pointer overflow-hidden"
+                    style={{
+                      borderColor: !VEHICLE_COLORS.includes(color) ? 'white' : 'transparent',
+                      boxShadow: !VEHICLE_COLORS.includes(color) ? '0 0 0 2px #6366f1' : 'none',
+                      backgroundColor: !VEHICLE_COLORS.includes(color) ? color : '#f1f5f9'
+                    }}
+                    title="Choose custom color"
+                  >
+                    <input
+                      type="color"
+                      value={color}
+                      onChange={e => setColor(e.target.value)}
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                      id="custom-color-picker-input"
+                    />
+                    {!VEHICLE_COLORS.includes(color) ? (
+                      <Check className="h-4 w-4 text-white mix-blend-difference" />
+                    ) : (
+                      <Pipette className="h-3.5 w-3.5 text-slate-500" />
+                    )}
+                  </div>
                 </div>
               </div>
 
@@ -1147,7 +1205,7 @@ export default function VehiclesTab({
 
                 <div className="flex justify-between items-start">
                   <div className="flex gap-3">
-                    <div className={`p-3 rounded-2xl shrink-0 ${colorScheme.bg} ${colorScheme.text} border ${colorScheme.border}`}>
+                    <div className={`p-3 rounded-2xl shrink-0 ${colorScheme.bg} ${colorScheme.text} border ${colorScheme.border}`} style={colorScheme.style}>
                       {getVehicleIcon(v.vehicleType)}
                     </div>
                     <div>
@@ -1159,13 +1217,8 @@ export default function VehiclesTab({
                           </span>
                         )}
                       </h3>
-                      <p className="text-xs font-semibold text-slate-500">
+                      <p className="text-xs font-semibold text-slate-500 mt-1">
                         {[v.year, v.make, v.model].filter(Boolean).join(' ') || 'Standard Profile'}
-                        {(v.vehicleType || v.fuelType) && (
-                          <span className="text-slate-400 font-normal">
-                            {' • '}{[v.vehicleType, v.fuelType].filter(Boolean).join(' / ')}
-                          </span>
-                        )}
                       </p>
                     </div>
                   </div>
@@ -1441,6 +1494,7 @@ export default function VehiclesTab({
                       placeholder="e.g. 7XYZ89"
                       value={editLicensePlate}
                       onChange={e => setEditLicensePlate(e.target.value)}
+                      autoCapitalize="characters"
                       className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none focus:border-indigo-500 font-semibold"
                     />
                   </div>
@@ -1463,7 +1517,7 @@ export default function VehiclesTab({
                     <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider block">
                       Tag Colors
                     </label>
-                    <div className="flex gap-3">
+                    <div className="flex flex-wrap items-center gap-3">
                       {VEHICLE_COLORS.map(c => (
                         <button
                           id={`edit-color-picker-${c.replace('#','')}`}
@@ -1480,6 +1534,30 @@ export default function VehiclesTab({
                           {editColor === c && <Check className="h-4 w-4 text-white" />}
                         </button>
                       ))}
+
+                      {/* Custom color picker */}
+                      <div 
+                        className="relative w-8 h-8 rounded-full border-2 transition flex items-center justify-center shrink-0 cursor-pointer overflow-hidden"
+                        style={{
+                          borderColor: !VEHICLE_COLORS.includes(editColor) ? 'white' : 'transparent',
+                          boxShadow: !VEHICLE_COLORS.includes(editColor) ? '0 0 0 2px #6366f1' : 'none',
+                          backgroundColor: !VEHICLE_COLORS.includes(editColor) ? editColor : '#f1f5f9'
+                        }}
+                        title="Choose custom color"
+                      >
+                        <input
+                          type="color"
+                          value={editColor}
+                          onChange={e => setEditColor(e.target.value)}
+                          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                          id="edit-custom-color-picker-input"
+                        />
+                        {!VEHICLE_COLORS.includes(editColor) ? (
+                          <Check className="h-4 w-4 text-white mix-blend-difference" />
+                        ) : (
+                          <Pipette className="h-3.5 w-3.5 text-slate-500" />
+                        )}
+                      </div>
                     </div>
                   </div>
 
