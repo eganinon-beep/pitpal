@@ -1,0 +1,8 @@
+{
+  "name": "Remix: pitpal",
+  "description": "Track vehicle maintenance schedules, fuel efficiency over time, and registration or license renewal deadlines with styled monthly cost and efficiency reports.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
