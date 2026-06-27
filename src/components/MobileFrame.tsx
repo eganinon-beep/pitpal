@@ -32,7 +32,7 @@ export default function MobileFrame({
   const [showQuickMenu, setShowQuickMenu] = useState(false);
 
   return (
-    <div className="min-h-screen min-h-[100dvh] bg-slate-50 flex flex-col items-center justify-center font-sans select-none" id="mobile-app-shell">
+    <div className="w-full h-full h-[100dvh] bg-slate-50 flex flex-col items-center justify-center font-sans select-none" id="mobile-app-shell">
       {/* Visual background atmospheric lights on desktop */}
       <div className="absolute top-1/4 left-1/4 w-[400px] h-[400px] bg-indigo-500/5 rounded-full blur-3xl pointer-events-none hidden md:block" />
       <div className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] bg-emerald-500/5 rounded-full blur-3xl pointer-events-none hidden md:block" />
