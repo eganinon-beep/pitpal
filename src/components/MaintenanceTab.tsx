@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
+import {motion, AnimatePresence } from 'motion/react';
 import { 
   Wrench, Plus, CheckCircle2, AlertTriangle, Calendar, 
   Gauge, User, X, AlertCircle, ChevronDown, Check, Trash2 
 } from 'lucide-react';
 import { MaintenanceLog, Vehicle, UserPreferences } from '../types';
-import { formatCurrency, formatDate } from '../utils';
+import { formatCurrency, formatDate, formatNumberWithCommas, parseNumberFromCommas } from '../utils';
 
 interface MaintenanceTabProps {
   logs: MaintenanceLog[];
@@ -48,10 +48,10 @@ export default function MaintenanceTab({
   const [vehicleId, setVehicleId] = useState(
     selectedVehicleId !== 'all' ? selectedVehicleId : vehicles[0]?.id || ''
   );
-  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+  const [date, setDate] = useState('');
   const [serviceType, setServiceType] = useState('');
   const [title, setTitle] = useState('');
-  const [odometer, setOdometer] = useState<number | ''>('');
+  const [odometer, setOdometer] = useState<number | string>('');
   const [cost, setCost] = useState<string>('');
   const [provider, setProvider] = useState('');
   const [notes, setNotes] = useState('');
@@ -61,12 +61,12 @@ export default function MaintenanceTab({
   const [scheduleType, setScheduleType] = useState<'Calendar-and-Mileage' | 'Calendar-Only' | 'Mileage-Only'>('Calendar-and-Mileage');
   const [hasRecurrence, setHasRecurrence] = useState(true);
   const [nextDueDate, setNextDueDate] = useState('');
-  const [nextDueOdometer, setNextDueOdometer] = useState<number | ''>('');
+  const [nextDueOdometer, setNextDueOdometer] = useState<number | string>('');
 
   // Mark Completed Mini-modal
   const [compLogId, setCompLogId] = useState<string | null>(null);
   const [compCost, setCompCost] = useState<string>('');
-  const [compOdometer, setCompOdometer] = useState<number | ''>('');
+  const [compOdometer, setCompOdometer] = useState<number | string>('');
 
   const [formError, setFormError] = useState('');
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
@@ -245,7 +245,7 @@ export default function MaintenanceTab({
                     id="maint-vehicle-selector"
                     value={vehicleId}
                     onChange={e => setVehicleId(e.target.value)}
-                    className="w-full h-11 px-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none focus:border-indigo-500 cursor-pointer font-bold"
+                    className="w-full h-11 px-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs focus:outline-none focus:border-indigo-500 cursor-pointer font-bold"
                   >
                     {vehicles.map(v => (
                       <option key={v.id} value={v.id}>
@@ -295,7 +295,7 @@ export default function MaintenanceTab({
                     placeholder="e.g. Oil Change, Tire Rotation, Brakes"
                     value={serviceType}
                     onChange={e => setServiceType(e.target.value)}
-                    className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none focus:border-indigo-500 font-semibold"
+                    className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs focus:outline-none focus:border-indigo-500 font-semibold"
                   />
                 </div>
 
@@ -308,7 +308,7 @@ export default function MaintenanceTab({
                     placeholder="Parts replaced, consumables used, specifications, etc. (Optional)"
                     value={title}
                     onChange={e => setTitle(e.target.value)}
-                    className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none focus:border-indigo-500 font-semibold"
+                    className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs focus:outline-none focus:border-indigo-500 font-semibold"
                   />
                 </div>
 
@@ -325,7 +325,7 @@ export default function MaintenanceTab({
                         type="date"
                         value={date}
                         onChange={e => setDate(e.target.value)}
-                        className="w-full h-11 px-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none focus:border-indigo-500 cursor-pointer font-semibold min-w-0"
+                        className="w-full h-11 px-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs focus:outline-none focus:border-indigo-500 cursor-pointer font-semibold min-w-0"
                       />
                     </div>
 
@@ -336,11 +336,11 @@ export default function MaintenanceTab({
                       </label>
                       <input
                         id="maint-odometer-input"
-                        type="number"
-                        placeholder="e.g. 52450"
-                        value={odometer}
-                        onChange={e => setOdometer(e.target.value === '' ? '' : Number(e.target.value))}
-                        className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none focus:border-indigo-500 font-semibold"
+                        type="text"
+                        placeholder="Reading during service"
+                        value={formatNumberWithCommas(odometer)}
+                        onChange={e => { const rawVal = parseNumberFromCommas(e.target.value); if (rawVal === '' || /^\d*\.?\d*$/.test(rawVal)) { setOdometer(rawVal); } }}
+                        className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs focus:outline-none focus:border-indigo-500 font-semibold"
                       />
                     </div>
                   </>
@@ -355,7 +355,7 @@ export default function MaintenanceTab({
                         id="maint-schedule-type-selector-scheduled"
                         value={scheduleType}
                         onChange={e => setScheduleType(e.target.value as any)}
-                        className="w-full h-11 px-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none focus:border-indigo-500 font-bold"
+                        className="w-full h-11 px-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs focus:outline-none focus:border-indigo-500 font-bold"
                       >
                         <option value="Calendar-and-Mileage">Calendar-Based / Mileage-based</option>
                         <option value="Calendar-Only">Calendar-Based Only</option>
@@ -373,7 +373,7 @@ export default function MaintenanceTab({
                         disabled={scheduleType === 'Mileage-Only'}
                         value={date}
                         onChange={e => setDate(e.target.value)}
-                        className={`w-full h-11 px-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none focus:border-indigo-500 cursor-pointer font-semibold min-w-0 ${
+                        className={`w-full h-11 px-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs focus:outline-none focus:border-indigo-500 cursor-pointer font-semibold min-w-0 ${
                           scheduleType === 'Mileage-Only' ? 'opacity-40 cursor-not-allowed bg-slate-100 border-slate-200' : ''
                         }`}
                       />
@@ -385,12 +385,12 @@ export default function MaintenanceTab({
                       </label>
                       <input
                         id="maint-odometer-input"
-                        type="number"
+                        type="text"
                         placeholder="e.g. 52450"
                         disabled={scheduleType === 'Calendar-Only'}
-                        value={odometer}
-                        onChange={e => setOdometer(e.target.value === '' ? '' : Number(e.target.value))}
-                        className={`w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none focus:border-indigo-500 font-semibold min-w-0 ${
+                        value={formatNumberWithCommas(odometer)}
+                        onChange={e => { const rawVal = parseNumberFromCommas(e.target.value); if (rawVal === '' || /^\d*\.?\d*$/.test(rawVal)) { setOdometer(rawVal); } }}
+                        className={`w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs focus:outline-none focus:border-indigo-500 font-semibold min-w-0 ${
                           scheduleType === 'Calendar-Only' ? 'opacity-40 cursor-not-allowed bg-slate-100 border-slate-200' : ''
                         }`}
                       />
@@ -405,17 +405,17 @@ export default function MaintenanceTab({
                   </label>
                   <input
                     id="maint-cost-input"
-                    type="number"
+                    type="text"
                     step="0.01"
                     placeholder="e.g. 89.99 (Optional)"
-                    value={cost}
-                    onChange={e => setCost(e.target.value)}
+                    value={formatNumberWithCommas(cost)}
+                    onChange={e => { const rawVal = parseNumberFromCommas(e.target.value); if (rawVal === '' || /^\d*\.?\d*$/.test(rawVal)) { setCost(rawVal); } }}
                     onBlur={() => {
                       if (cost !== '') {
                         setCost(Number(cost).toFixed(2));
                       }
                     }}
-                    className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none focus:border-indigo-500 font-semibold"
+                    className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs focus:outline-none focus:border-indigo-500 font-semibold"
                   />
                 </div>
 
@@ -428,7 +428,7 @@ export default function MaintenanceTab({
                     placeholder="e.g. Honda Dealership, Self"
                     value={provider}
                     onChange={e => setProvider(e.target.value)}
-                    className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none focus:border-indigo-500 font-semibold"
+                    className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs focus:outline-none focus:border-indigo-500 font-semibold"
                   />
                 </div>
 
@@ -454,7 +454,7 @@ export default function MaintenanceTab({
                             id="maint-schedule-type-selector-completed"
                             value={scheduleType}
                             onChange={e => setScheduleType(e.target.value as any)}
-                            className="w-full h-11 px-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none focus:border-indigo-500 font-bold"
+                            className="w-full h-11 px-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs focus:outline-none focus:border-indigo-500 font-bold"
                           >
                             <option value="Calendar-and-Mileage">Calendar-Based / Mileage-based</option>
                             <option value="Calendar-Only">Calendar-Based Only</option>
@@ -484,11 +484,11 @@ export default function MaintenanceTab({
                             </label>
                             <input
                               id="maint-next-due-odo-input"
-                              type="number"
+                              type="text"
                               placeholder="Next mileage"
                               disabled={scheduleType === 'Calendar-Only'}
-                              value={nextDueOdometer}
-                              onChange={e => setNextDueOdometer(e.target.value === '' ? '' : Number(e.target.value))}
+                              value={formatNumberWithCommas(nextDueOdometer)}
+                              onChange={e => { const rawVal = parseNumberFromCommas(e.target.value); if (rawVal === '' || /^\d*\.?\d*$/.test(rawVal)) { setNextDueOdometer(rawVal); } }}
                               className={`w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 text-xs focus:outline-none font-semibold ${
                                 scheduleType === 'Calendar-Only' ? 'opacity-40 cursor-not-allowed bg-slate-100' : ''
                               }`}
@@ -509,7 +509,7 @@ export default function MaintenanceTab({
                     rows={2}
                     value={notes}
                     onChange={e => setNotes(e.target.value)}
-                    className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none focus:border-indigo-500 font-medium"
+                    className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs focus:outline-none focus:border-indigo-500 font-medium"
                   />
                 </div>
               </div>
@@ -562,12 +562,12 @@ export default function MaintenanceTab({
                   <label className="text-[10px] uppercase font-bold text-slate-400 block">Actual Odometer ({preferences.distanceUnit})</label>
                   <input
                     id="comp-odometer-input"
-                    type="number"
+                    type="text"
                     required
-                    placeholder="Enter final mileage"
-                    value={compOdometer}
-                    onChange={e => setCompOdometer(Number(e.target.value))}
-                    className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none"
+                    placeholder="Reading during service"
+                    value={formatNumberWithCommas(compOdometer)}
+                    onChange={e => { const rawVal = parseNumberFromCommas(e.target.value); if (rawVal === '' || /^\d*\.?\d*$/.test(rawVal)) { setCompOdometer(rawVal); } }}
+                    className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs focus:outline-none"
                   />
                 </div>
 
@@ -575,17 +575,17 @@ export default function MaintenanceTab({
                   <label className="text-[10px] uppercase font-bold text-slate-400 block">Final Bill / Cost ({preferences.currency || 'USD'})</label>
                   <input
                     id="comp-cost-input"
-                    type="number"
+                    type="text"
                     step="0.01"
                     placeholder="Enter invoice total (Optional)"
-                    value={compCost}
-                    onChange={e => setCompCost(e.target.value)}
+                    value={formatNumberWithCommas(compCost)}
+                    onChange={e => { const rawVal = parseNumberFromCommas(e.target.value); if (rawVal === '' || /^\d*\.?\d*$/.test(rawVal)) { setCompCost(rawVal); } }}
                     onBlur={() => {
                       if (compCost !== '') {
                         setCompCost(Number(compCost).toFixed(2));
                       }
                     }}
-                    className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none"
+                    className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs focus:outline-none"
                   />
                 </div>
 

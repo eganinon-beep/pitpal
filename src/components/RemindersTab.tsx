@@ -19,7 +19,7 @@ const REMINDER_TYPES = [
   { value: 'Registration', label: 'Vehicle Registration' },
   { value: 'License', label: "Driver's License" },
   { value: 'Insurance', label: 'Car Insurance Premium' },
-  { value: 'Other', label: 'Other/Custom Document' }
+  { value: 'Other', label: 'Other' }
 ];
 
 export default function RemindersTab({
@@ -46,6 +46,7 @@ export default function RemindersTab({
   const [notes, setNotes] = useState('');
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [archiveConfirmId, setArchiveConfirmId] = useState<string | null>(null);
+  const [extendConfirmReminder, setExtendConfirmReminder] = useState<RenewalReminder | null>(null);
 
   const [formError, setFormError] = useState('');
 
@@ -71,7 +72,7 @@ export default function RemindersTab({
     } else if (type === 'License') {
       setTitle("Personal Driver's License");
     } else if (type === 'Other') {
-      setTitle('Custom Deadline Alert');
+      setTitle('');
     }
   }, [type, vehicleId, vehicles, editingId]);
 
@@ -148,6 +149,10 @@ export default function RemindersTab({
 
   // Automated UX helper: bump deadline by +1 year
   const handleExtendOneYear = (rem: RenewalReminder) => {
+    setExtendConfirmReminder(rem);
+  };
+
+  const confirmExtendOneYear = (rem: RenewalReminder) => {
     const origDate = new Date(rem.dueDate);
     origDate.setFullYear(origDate.getFullYear() + 1);
     const newDueDateStr = origDate.toISOString().split('T')[0];
@@ -219,7 +224,7 @@ export default function RemindersTab({
             >
             <div className="flex justify-between items-center pb-2 border-b border-slate-100">
               <h3 className="text-xs font-bold text-slate-900 flex items-center gap-2">
-                <FileText className="h-4 w-4 text-indigo-600" /> {editingId ? 'Edit Document Details' : 'Add Vehicle Document'}
+                <FileText className="h-4 w-4 text-indigo-600" /> {editingId ? 'Edit Document Details' : 'Add Document'}
               </h3>
               <button
                 id="cancel-add-reminder-btn"
@@ -558,7 +563,7 @@ export default function RemindersTab({
                  </div>
                  <div>
                    <h4 className="font-extrabold text-sm text-slate-900">Delete Document?</h4>
-                   <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Irreversible Action</p>
+                   
                  </div>
                </div>
  
@@ -594,6 +599,67 @@ export default function RemindersTab({
          )}
        </AnimatePresence>
 
+        {/* Custom Extend Confirmation Modal */}
+        <AnimatePresence>
+          {extendConfirmReminder && (
+            <div className="fixed inset-0 z-55 flex items-center justify-center p-4">
+              <motion.div
+                id="extend-confirm-backdrop"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 0.4 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setExtendConfirmReminder(null)}
+                className="absolute inset-0 bg-slate-950/60 backdrop-blur-xs"
+              />
+              
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                className="bg-white border border-slate-200 rounded-3xl p-6 w-full max-w-sm relative z-50 space-y-4 shadow-2xl"
+                id="extend-confirm-modal"
+              >
+                <div className="flex items-center gap-3 text-indigo-600">
+                  <div className="p-2.5 bg-indigo-50 rounded-2xl border border-indigo-100 shrink-0">
+                    <RefreshCcw className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h4 className="font-extrabold text-sm text-slate-900">Extend Deadline?</h4>
+                  </div>
+                </div>
+
+                <p className="text-xs text-slate-655 leading-relaxed font-semibold">
+                  Are you sure you want to extend the deadline for <span className="font-extrabold text-slate-800">"{extendConfirmReminder.title}"</span> by <span className="font-extrabold text-indigo-600">+1 calendar year</span>?
+                </p>
+
+                <div className="flex gap-2.5 pt-2">
+                  <button
+                    id="cancel-extend-btn"
+                    type="button"
+                    onClick={() => setExtendConfirmReminder(null)}
+                    className="flex-1 h-11 border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold rounded-xl text-xs transition cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    id="confirm-extend-btn"
+                    type="button"
+                    onClick={() => {
+                      if (extendConfirmReminder) {
+                        confirmExtendOneYear(extendConfirmReminder);
+                        setExtendConfirmReminder(null);
+                      }
+                    }}
+                    className="flex-1 h-11 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl text-xs transition cursor-pointer shadow-md shadow-indigo-600/15"
+                  >
+                    Confirm
+                  </button>
+                </div>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>
+
        {/* Custom Archive Confirmation Modal */}
        <AnimatePresence>
          {archiveConfirmId && (
@@ -620,7 +686,7 @@ export default function RemindersTab({
                  </div>
                  <div>
                    <h4 className="font-extrabold text-sm text-slate-900">Archive Document?</h4>
-                   <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Archive Status</p>
+                   
                  </div>
                </div>
  

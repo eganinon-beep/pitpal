@@ -17,6 +17,23 @@ import {
 } from './initialData';
 
 import { Vehicle, FuelRefill, MaintenanceLog, RenewalReminder, UserPreferences } from './types';
+import { formatNumberWithCommas, parseNumberFromCommas } from './utils';
+
+const getCurrencySymbol = (code: string = 'USD') => {
+  const symbols: { [key: string]: string } = {
+    USD: '$',
+    EUR: '€',
+    GBP: '£',
+    AUD: '$',
+    CAD: '$',
+    JPY: '¥',
+    PHP: '₱',
+    INR: '₹',
+    SGD: '$',
+    NZD: '$'
+  };
+  return symbols[code] || '$';
+};
 
 export default function App() {
   // --- 1. CORE APPLICATIONS STORAGE STATES ---
@@ -172,7 +189,7 @@ export default function App() {
   // Update Mileage Quick Action States
   const [showUpdateMileageModal, setShowUpdateMileageModal] = useState(false);
   const [updateMileageVehicleId, setUpdateMileageVehicleId] = useState('');
-  const [newMileageValue, setNewMileageValue] = useState<number | ''>('');
+  const [newMileageValue, setNewMileageValue] = useState<number | string>('');
   const [newMileageDate, setNewMileageDate] = useState('');
   const [newMileageNotes, setNewMileageNotes] = useState('');
   const [updateMileageError, setUpdateMileageError] = useState('');
@@ -182,10 +199,10 @@ export default function App() {
   const [showQuickFuelModal, setShowQuickFuelModal] = useState(false);
   const [quickFuelVehicleId, setQuickFuelVehicleId] = useState('');
   const [quickFuelDate, setQuickFuelDate] = useState('');
-  const [quickFuelOdometer, setQuickFuelOdometer] = useState<number | ''>('');
-  const [quickFuelVolume, setQuickFuelVolume] = useState<number | ''>('');
-  const [quickFuelPricePerUnit, setQuickFuelPricePerUnit] = useState<number | ''>('');
-  const [quickFuelTotalCost, setQuickFuelTotalCost] = useState<number | ''>('');
+  const [quickFuelOdometer, setQuickFuelOdometer] = useState<number | string>('');
+  const [quickFuelVolume, setQuickFuelVolume] = useState<number | string>('');
+  const [quickFuelPricePerUnit, setQuickFuelPricePerUnit] = useState<number | string>('');
+  const [quickFuelTotalCost, setQuickFuelTotalCost] = useState<number | string>('');
   const [quickFuelFullTank, setQuickFuelFullTank] = useState(true);
   const [quickFuelGasStation, setQuickFuelGasStation] = useState('');
   const [quickFuelFuelBrand, setQuickFuelFuelBrand] = useState('');
@@ -199,15 +216,15 @@ export default function App() {
   const [quickMaintDate, setQuickMaintDate] = useState('');
   const [quickMaintServiceType, setQuickMaintServiceType] = useState('');
   const [quickMaintTitle, setQuickMaintTitle] = useState('');
-  const [quickMaintOdometer, setQuickMaintOdometer] = useState<number | ''>('');
-  const [quickMaintCost, setQuickMaintCost] = useState<number | ''>('');
+  const [quickMaintOdometer, setQuickMaintOdometer] = useState<number | string>('');
+  const [quickMaintCost, setQuickMaintCost] = useState<number | string>('');
   const [quickMaintProvider, setQuickMaintProvider] = useState('');
   const [quickMaintNotes, setQuickMaintNotes] = useState('');
   const [quickMaintStatus, setQuickMaintStatus] = useState<'Scheduled' | 'Completed'>('Completed');
   const [quickMaintHasRecurrence, setQuickMaintHasRecurrence] = useState(true);
   const [quickMaintScheduleType, setQuickMaintScheduleType] = useState<'Calendar-and-Mileage' | 'Calendar-Only' | 'Mileage-Only'>('Calendar-and-Mileage');
   const [quickMaintNextDueDate, setQuickMaintNextDueDate] = useState('');
-  const [quickMaintNextDueOdometer, setQuickMaintNextDueOdometer] = useState<number | ''>('');
+  const [quickMaintNextDueOdometer, setQuickMaintNextDueOdometer] = useState<number | string>('');
   const [quickMaintError, setQuickMaintError] = useState('');
   const [quickMaintReceiptPhoto, setQuickMaintReceiptPhoto] = useState('');
 
@@ -254,13 +271,48 @@ export default function App() {
     reader.readAsDataURL(file);
   };
 
-  // Quick Fuel auto total cost calculation
-  useEffect(() => {
-    if (quickFuelVolume !== '' && quickFuelPricePerUnit !== '') {
-      const calculated = Number(quickFuelVolume) * Number(quickFuelPricePerUnit);
-      setQuickFuelTotalCost(Number(calculated.toFixed(2)));
+  // Quick Fuel auto calculation helper functions
+  const handleQuickFuelVolumeChange = (val: string) => {
+    setQuickFuelVolume(val);
+    const v = parseFloat(val);
+    if (!isNaN(v) && v > 0) {
+      const p = parseFloat(quickFuelPricePerUnit.toString());
+      const c = parseFloat(quickFuelTotalCost.toString());
+      if (!isNaN(p) && p > 0) {
+        setQuickFuelTotalCost(parseFloat((v * p).toFixed(2)).toString());
+      } else if (!isNaN(c) && c > 0) {
+        setQuickFuelPricePerUnit(parseFloat((c / v).toFixed(3)).toString());
+      }
     }
-  }, [quickFuelVolume, quickFuelPricePerUnit]);
+  };
+
+  const handleQuickFuelPriceChange = (val: string) => {
+    setQuickFuelPricePerUnit(val);
+    const p = parseFloat(val);
+    if (!isNaN(p) && p > 0) {
+      const v = parseFloat(quickFuelVolume.toString());
+      const c = parseFloat(quickFuelTotalCost.toString());
+      if (!isNaN(v) && v > 0) {
+        setQuickFuelTotalCost(parseFloat((v * p).toFixed(2)).toString());
+      } else if (!isNaN(c) && c > 0) {
+        setQuickFuelVolume(parseFloat((c / p).toFixed(3)).toString());
+      }
+    }
+  };
+
+  const handleQuickFuelCostChange = (val: string) => {
+    setQuickFuelTotalCost(val);
+    const c = parseFloat(val);
+    if (!isNaN(c) && c > 0) {
+      const v = parseFloat(quickFuelVolume.toString());
+      const p = parseFloat(quickFuelPricePerUnit.toString());
+      if (!isNaN(v) && v > 0) {
+        setQuickFuelPricePerUnit(parseFloat((c / v).toFixed(3)).toString());
+      } else if (!isNaN(p) && p > 0) {
+        setQuickFuelVolume(parseFloat((c / p).toFixed(3)).toString());
+      }
+    }
+  };
 
   // --- 4. DATA MODEL INTEGRITY EVENT HANDLERS ---
   
@@ -465,13 +517,11 @@ export default function App() {
     if (vehicles.length > 0) {
       const activeId = selectedVehicleId === 'all' ? vehicles[0].id : selectedVehicleId;
       setQuickFuelVehicleId(activeId);
-      const selectedVeh = vehicles.find(v => v.id === activeId);
-      setQuickFuelOdometer(selectedVeh ? selectedVeh.currentOdometer : '');
     } else {
       setQuickFuelVehicleId('');
-      setQuickFuelOdometer('');
     }
-    setQuickFuelDate(new Date().toISOString().split('T')[0]);
+    setQuickFuelOdometer('');
+    setQuickFuelDate('');
     setQuickFuelVolume('');
     setQuickFuelPricePerUnit('');
     setQuickFuelTotalCost('');
@@ -488,13 +538,11 @@ export default function App() {
     if (vehicles.length > 0) {
       const activeId = selectedVehicleId === 'all' ? vehicles[0].id : selectedVehicleId;
       setQuickMaintVehicleId(activeId);
-      const selectedVeh = vehicles.find(v => v.id === activeId);
-      setQuickMaintOdometer(selectedVeh ? selectedVeh.currentOdometer : '');
     } else {
       setQuickMaintVehicleId('');
-      setQuickMaintOdometer('');
     }
-    setQuickMaintDate(new Date().toISOString().split('T')[0]);
+    setQuickMaintOdometer('');
+    setQuickMaintDate('');
     setQuickMaintServiceType('');
     setQuickMaintTitle('');
     setQuickMaintCost('');
@@ -514,13 +562,11 @@ export default function App() {
     if (vehicles.length > 0) {
       const activeId = selectedVehicleId === 'all' ? vehicles[0].id : selectedVehicleId;
       setUpdateMileageVehicleId(activeId);
-      const selectedVeh = vehicles.find(v => v.id === activeId);
-      setNewMileageValue(selectedVeh ? selectedVeh.currentOdometer : '');
     } else {
       setUpdateMileageVehicleId('');
-      setNewMileageValue('');
     }
-    setNewMileageDate(new Date().toISOString().split('T')[0]);
+    setNewMileageValue('');
+    setNewMileageDate('');
     setNewMileageNotes('');
     setQuickMileageReceiptPhoto('');
     setUpdateMileageError('');
@@ -651,7 +697,6 @@ export default function App() {
                 </div>
                 <div>
                   <h3 className="text-base font-extrabold text-slate-900 leading-tight">Record Mileage</h3>
-                  <p className="text-xs text-slate-400 font-semibold">Instantly record vehicle odometer reading</p>
                 </div>
               </div>
             </div>
@@ -674,14 +719,9 @@ export default function App() {
                   onChange={(e) => {
                     const vehId = e.target.value;
                     setUpdateMileageVehicleId(vehId);
-                    const selectedVeh = vehicles.find(v => v.id === vehId);
-                    if (selectedVeh) {
-                      setNewMileageValue(selectedVeh.currentOdometer);
-                    } else {
-                      setNewMileageValue('');
-                    }
+                    setNewMileageValue('');
                   }}
-                  className="w-full h-11 px-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none focus:border-indigo-500 font-bold cursor-pointer"
+                  className="w-full h-11 px-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs focus:outline-none focus:border-indigo-500 font-bold cursor-pointer"
                 >
                   <option value="">-- Choose Vehicle --</option>
                   {vehicles.map(v => (
@@ -710,20 +750,25 @@ export default function App() {
                   type="date"
                   value={newMileageDate}
                   onChange={(e) => setNewMileageDate(e.target.value)}
-                  className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none focus:border-indigo-500 font-semibold min-w-0"
+                  className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs focus:outline-none focus:border-indigo-500 font-semibold min-w-0"
                 />
               </div>
 
               {/* New Mileage Input */}
               <div className="space-y-1">
-                <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider block">Record Odometer Reading ({preferences.distanceUnit})</label>
+                <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider block">Updated Odometer Reading ({preferences.distanceUnit})</label>
                 <input
                   id="update-mileage-value-input"
-                  type="number"
-                  placeholder="Enter odometer reading to record"
-                  value={newMileageValue}
-                  onChange={(e) => setNewMileageValue(e.target.value === '' ? '' : Number(e.target.value))}
-                  className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none focus:border-indigo-500 font-semibold"
+                  type="text"
+                  placeholder=""
+                  value={formatNumberWithCommas(newMileageValue)}
+                  onChange={(e) => {
+                    const rawVal = parseNumberFromCommas(e.target.value);
+                    if (rawVal === '' || /^\d*\.?\d*$/.test(rawVal)) {
+                      setNewMileageValue(rawVal);
+                    }
+                  }}
+                  className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs focus:outline-none focus:border-indigo-500 font-semibold"
                 />
               </div>
 
@@ -736,7 +781,7 @@ export default function App() {
                   placeholder="e.g., Monthly check, routine update"
                   value={newMileageNotes}
                   onChange={(e) => setNewMileageNotes(e.target.value)}
-                  className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none focus:border-indigo-500 font-semibold"
+                  className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs focus:outline-none focus:border-indigo-500 font-semibold"
                 />
               </div>
 
@@ -768,7 +813,7 @@ export default function App() {
                     className="hidden"
                   />
                   <Camera className="h-5 w-5 text-slate-400" />
-                  <span className="text-xs font-semibold text-slate-600">Drag & Drop or Click to upload photo</span>
+                  <span className="text-xs font-semibold text-slate-600">Upload Photo</span>
                   {quickMileageReceiptPhoto ? (
                     <div className="mt-2 flex items-center gap-2 bg-white border border-slate-200 px-3 py-1.5 rounded-lg shadow-sm max-w-xs" onClick={(e) => e.stopPropagation()}>
                       <img src={quickMileageReceiptPhoto} alt="Preview" className="h-8 w-8 object-cover rounded-md" />
@@ -860,7 +905,6 @@ export default function App() {
                 </div>
                 <div>
                   <h3 className="text-base font-extrabold text-slate-900 leading-tight">Record Fuel Refill</h3>
-                  <p className="text-xs text-slate-400 font-semibold">Record a new fuel receipt to compute efficiency</p>
                 </div>
               </div>
             </div>
@@ -901,14 +945,9 @@ export default function App() {
                       onChange={(e) => {
                         const vehId = e.target.value;
                         setQuickFuelVehicleId(vehId);
-                        const selectedVeh = vehicles.find(v => v.id === vehId);
-                        if (selectedVeh) {
-                          setQuickFuelOdometer(selectedVeh.currentOdometer);
-                        } else {
-                          setQuickFuelOdometer('');
-                        }
+                        setQuickFuelOdometer('');
                       }}
-                      className="w-full h-11 px-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none focus:border-indigo-500 font-bold cursor-pointer"
+                      className="w-full h-11 px-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs focus:outline-none focus:border-indigo-500 font-bold cursor-pointer"
                     >
                       <option value="">-- Choose Vehicle --</option>
                       {vehicles.map(v => (
@@ -928,7 +967,7 @@ export default function App() {
                          type="date"
                          value={quickFuelDate}
                          onChange={(e) => setQuickFuelDate(e.target.value)}
-                         className="w-full h-11 px-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none focus:border-indigo-500 font-semibold min-w-0"
+                         className="w-full h-11 px-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs focus:outline-none focus:border-indigo-500 font-semibold min-w-0"
                        />
                      </div>
  
@@ -937,27 +976,31 @@ export default function App() {
                        <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider block">Odometer ({preferences.distanceUnit})</label>
                        <input
                          id="quick-fuel-odometer-input"
-                         type="number"
-                         placeholder="Current reading"
-                         value={quickFuelOdometer}
-                         onChange={(e) => setQuickFuelOdometer(e.target.value === '' ? '' : Number(e.target.value))}
-                         className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none focus:border-indigo-500 font-semibold min-w-0"
+                         type="text"
+                         placeholder="Reading during fuel refill"
+                         value={formatNumberWithCommas(quickFuelOdometer)}
+                         onChange={(e) => { const rawVal = parseNumberFromCommas(e.target.value); if (rawVal === '' || /^\d*\.?\d*$/.test(rawVal)) { setQuickFuelOdometer(rawVal); } }}
+                         className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs focus:outline-none focus:border-indigo-500 font-semibold min-w-0"
                        />
                      </div>
                    </div>
 
-                  <div className="grid grid-cols-3 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                     {/* Fuel Volume */}
                     <div className="space-y-1">
                       <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider block">Volume ({preferences.volumeUnit})</label>
                       <input
                         id="quick-fuel-volume-input"
-                        type="number"
-                        step="any"
+                        type="text"
                         placeholder="0.00"
-                        value={quickFuelVolume}
-                        onChange={(e) => setQuickFuelVolume(e.target.value === '' ? '' : Number(e.target.value))}
-                        className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none focus:border-indigo-500 font-semibold"
+                        value={formatNumberWithCommas(quickFuelVolume)}
+                        onChange={(e) => {
+                          const rawVal = parseNumberFromCommas(e.target.value);
+                          if (rawVal === '' || /^\d*\.?\d*$/.test(rawVal)) {
+                            handleQuickFuelVolumeChange(rawVal);
+                          }
+                        }}
+                        className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs focus:outline-none focus:border-indigo-500 font-semibold"
                       />
                     </div>
 
@@ -966,26 +1009,34 @@ export default function App() {
                       <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider block">Price/{preferences.volumeUnit}</label>
                       <input
                         id="quick-fuel-price-input"
-                        type="number"
-                        step="any"
+                        type="text"
                         placeholder="0.00"
-                        value={quickFuelPricePerUnit}
-                        onChange={(e) => setQuickFuelPricePerUnit(e.target.value === '' ? '' : Number(e.target.value))}
-                        className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none focus:border-indigo-500 font-semibold"
+                        value={formatNumberWithCommas(quickFuelPricePerUnit)}
+                        onChange={(e) => {
+                          const rawVal = parseNumberFromCommas(e.target.value);
+                          if (rawVal === '' || /^\d*\.?\d*$/.test(rawVal)) {
+                            handleQuickFuelPriceChange(rawVal);
+                          }
+                        }}
+                        className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs focus:outline-none focus:border-indigo-500 font-semibold"
                       />
                     </div>
 
                     {/* Total Cost */}
-                    <div className="space-y-1">
+                    <div className="space-y-1 col-span-1 sm:col-span-2">
                       <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider block">Total Cost</label>
                       <input
                         id="quick-fuel-cost-input"
-                        type="number"
-                        step="any"
+                        type="text"
                         placeholder="0.00"
-                        value={quickFuelTotalCost}
-                        onChange={(e) => setQuickFuelTotalCost(e.target.value === '' ? '' : Number(e.target.value))}
-                        className="w-full h-11 px-3.5 bg-indigo-50 border border-indigo-100 rounded-xl text-slate-800 text-sm focus:outline-none focus:border-indigo-500 font-bold"
+                        value={formatNumberWithCommas(quickFuelTotalCost)}
+                        onChange={(e) => {
+                          const rawVal = parseNumberFromCommas(e.target.value);
+                          if (rawVal === '' || /^\d*\.?\d*$/.test(rawVal)) {
+                            handleQuickFuelCostChange(rawVal);
+                          }
+                        }}
+                        className="w-full h-11 px-3.5 bg-indigo-50 border border-indigo-100 rounded-xl text-slate-800 text-xs focus:outline-none focus:border-indigo-500 font-bold"
                       />
                     </div>
                   </div>
@@ -1000,20 +1051,20 @@ export default function App() {
                         placeholder="e.g. Shell, Chevron"
                         value={quickFuelGasStation}
                         onChange={(e) => setQuickFuelGasStation(e.target.value)}
-                        className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none focus:border-indigo-500 font-semibold"
+                        className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs focus:outline-none focus:border-indigo-500 font-semibold"
                       />
                     </div>
 
                     {/* Fuel Brand */}
                     <div className="space-y-1">
-                      <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider block">Fuel Type / Octane</label>
+                      <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider block">Fuel Brand</label>
                       <input
                         id="quick-fuel-brand-input"
                         type="text"
                         placeholder="e.g. Regular unleaded, Premium"
                         value={quickFuelFuelBrand}
                         onChange={(e) => setQuickFuelFuelBrand(e.target.value)}
-                        className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none focus:border-indigo-500 font-semibold"
+                        className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs focus:outline-none focus:border-indigo-500 font-semibold"
                       />
                     </div>
                   </div>
@@ -1027,7 +1078,7 @@ export default function App() {
                       value={quickFuelNotes}
                       onChange={(e) => setQuickFuelNotes(e.target.value)}
                       rows={2}
-                      className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none focus:border-indigo-500 font-semibold resize-none"
+                      className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs focus:outline-none focus:border-indigo-500 font-semibold resize-none"
                     />
                   </div>
 
@@ -1059,7 +1110,7 @@ export default function App() {
                         className="hidden"
                       />
                       <Camera className="h-5 w-5 text-slate-400" />
-                      <span className="text-xs font-semibold text-slate-600">Drag & Drop or Click to upload photo</span>
+                      <span className="text-xs font-semibold text-slate-600">Upload Photo</span>
                       {quickFuelReceiptPhoto ? (
                         <div className="mt-2 flex items-center gap-2 bg-white border border-slate-200 px-3 py-1.5 rounded-lg shadow-sm max-w-xs" onClick={(e) => e.stopPropagation()}>
                           <img src={quickFuelReceiptPhoto} alt="Preview" className="h-8 w-8 object-cover rounded-md" />
@@ -1182,7 +1233,7 @@ export default function App() {
                 </div>
                 <div>
                   <h3 className="text-base font-extrabold text-slate-900 leading-tight">Record Service</h3>
-                  <p className="text-xs text-slate-400 font-semibold">Log vehicle repairs, routine service, or scheduler</p>
+                  
                 </div>
               </div>
             </div>
@@ -1242,14 +1293,9 @@ export default function App() {
                       onChange={(e) => {
                         const vehId = e.target.value;
                         setQuickMaintVehicleId(vehId);
-                        const selectedVeh = vehicles.find(v => v.id === vehId);
-                        if (selectedVeh) {
-                          setQuickMaintOdometer(selectedVeh.currentOdometer);
-                        } else {
-                          setQuickMaintOdometer('');
-                        }
+                        setQuickMaintOdometer('');
                       }}
-                      className="w-full h-11 px-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none focus:border-indigo-500 font-bold cursor-pointer"
+                      className="w-full h-11 px-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs focus:outline-none focus:border-indigo-500 font-bold cursor-pointer"
                     >
                       <option value="">-- Choose Vehicle --</option>
                       {vehicles.map(v => (
@@ -1270,7 +1316,7 @@ export default function App() {
                         placeholder="e.g. Oil Change, Tires"
                         value={quickMaintServiceType}
                         onChange={(e) => setQuickMaintServiceType(e.target.value)}
-                        className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none focus:border-indigo-500 font-semibold"
+                        className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs focus:outline-none focus:border-indigo-500 font-semibold"
                       />
                     </div>
 
@@ -1283,7 +1329,7 @@ export default function App() {
                         value={quickMaintNotes}
                         onChange={(e) => setQuickMaintNotes(e.target.value)}
                         rows={2}
-                        className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none focus:border-indigo-500 font-semibold resize-none"
+                        className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs focus:outline-none focus:border-indigo-500 font-semibold resize-none"
                       />
                     </div>
                   </div>
@@ -1291,7 +1337,7 @@ export default function App() {
                   {/* Scheduled Specifics */}
                   {quickMaintStatus === 'Scheduled' && (
                     <div className="p-3.5 bg-indigo-50 border border-indigo-100 rounded-2xl space-y-3">
-                      <label className="text-[10px] uppercase font-bold text-indigo-700 tracking-wider block">Schedule Rules</label>
+                      <label className="text-[10px] uppercase font-bold text-indigo-700 tracking-wider block">Alert based on:</label>
                       <select
                         id="quick-maint-schedule-type"
                         value={quickMaintScheduleType}
@@ -1317,7 +1363,7 @@ export default function App() {
                            type="date"
                            value={quickMaintDate}
                            onChange={(e) => setQuickMaintDate(e.target.value)}
-                           className="w-full h-11 px-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none focus:border-indigo-500 font-semibold min-w-0"
+                           className="w-full h-11 px-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs focus:outline-none focus:border-indigo-500 font-semibold min-w-0"
                          />
                        </div>
                      )}
@@ -1330,11 +1376,11 @@ export default function App() {
                          </label>
                          <input
                            id="quick-maint-odometer-input"
-                           type="number"
-                           placeholder="Current mileage"
-                           value={quickMaintOdometer}
-                           onChange={(e) => setQuickMaintOdometer(e.target.value === '' ? '' : Number(e.target.value))}
-                           className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none focus:border-indigo-500 font-semibold min-w-0"
+                           type="text"
+                           placeholder="Reading during service"
+                           value={formatNumberWithCommas(quickMaintOdometer)}
+                           onChange={(e) => { const rawVal = parseNumberFromCommas(e.target.value); if (rawVal === '' || /^\d*\.?\d*$/.test(rawVal)) { setQuickMaintOdometer(rawVal); } }}
+                           className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs focus:outline-none focus:border-indigo-500 font-semibold min-w-0"
                          />
                        </div>
                      )}
@@ -1344,16 +1390,16 @@ export default function App() {
                     <div className="grid grid-cols-2 gap-4">
                       {/* Cost */}
                       <div className="space-y-1">
-                        <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider block">Service Cost</label>
+                        <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider block">Total Cost (${preferences.currency || 'USD'})</label>
                         <div className="relative">
-                          <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm font-bold">$</span>
+                          <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm font-bold">{getCurrencySymbol(preferences.currency)}</span>
                           <input
                             id="quick-maint-cost-input"
-                            type="number"
+                            type="text"
                             placeholder="0.00"
-                            value={quickMaintCost}
-                            onChange={(e) => setQuickMaintCost(e.target.value === '' ? '' : Number(e.target.value))}
-                            className="w-full h-11 pl-7 pr-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none focus:border-indigo-500 font-semibold"
+                            value={formatNumberWithCommas(quickMaintCost)}
+                            onChange={(e) => { const rawVal = parseNumberFromCommas(e.target.value); if (rawVal === '' || /^\d*\.?\d*$/.test(rawVal)) { setQuickMaintCost(rawVal); } }}
+                            className="w-full h-11 pl-7 pr-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs focus:outline-none focus:border-indigo-500 font-semibold"
                           />
                         </div>
                       </div>
@@ -1367,11 +1413,58 @@ export default function App() {
                           placeholder="e.g. Local Shop, Self"
                           value={quickMaintProvider}
                           onChange={(e) => setQuickMaintProvider(e.target.value)}
-                          className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none focus:border-indigo-500 font-semibold"
+                          className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs focus:outline-none focus:border-indigo-500 font-semibold"
                         />
                       </div>
                     </div>
                   )}
+
+                  {/* Photo Upload */}
+                  <div className="space-y-1">
+                    <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider block">Service Photo (Optional)</label>
+                    <div 
+                      className="flex flex-col items-center justify-center p-4 border border-dashed border-slate-200 rounded-xl bg-slate-50 hover:bg-slate-100 transition gap-2 text-center cursor-pointer relative"
+                      onDragOver={(e) => e.preventDefault()}
+                      onDrop={(e) => {
+                        e.preventDefault();
+                        const file = e.dataTransfer.files?.[0];
+                        if (file) {
+                          handleQuickPhotoChange(file, setQuickMaintReceiptPhoto);
+                        }
+                      }}
+                      onClick={() => document.getElementById('quick-maint-photo-input')?.click()}
+                    >
+                      <input
+                        id="quick-maint-photo-input"
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            handleQuickPhotoChange(file, setQuickMaintReceiptPhoto);
+                          }
+                        }}
+                        className="hidden"
+                      />
+                      <Camera className="h-5 w-5 text-slate-400" />
+                      <span className="text-xs font-semibold text-slate-600">Upload Photo</span>
+                      {quickMaintReceiptPhoto ? (
+                        <div className="mt-2 flex items-center gap-2 bg-white border border-slate-200 px-3 py-1.5 rounded-lg shadow-sm max-w-xs" onClick={(e) => e.stopPropagation()}>
+                          <img src={quickMaintReceiptPhoto} alt="Preview" className="h-8 w-8 object-cover rounded-md" />
+                          <span className="text-xs text-emerald-600 font-bold truncate">Photo Attached</span>
+                          <button 
+                            type="button" 
+                            onClick={() => setQuickMaintReceiptPhoto('')} 
+                            className="text-slate-400 hover:text-rose-500 font-semibold text-xs ml-1 cursor-pointer"
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      ) : (
+                        <span className="text-[10px] text-slate-400">JPEG/PNG, Max 1.5MB</span>
+                      )}
+                    </div>
+                  </div>
 
                   {/* Recurrence Trigger for Completed Services */}
                   {quickMaintStatus === 'Completed' && (
@@ -1388,9 +1481,9 @@ export default function App() {
                       </label>
 
                       {quickMaintHasRecurrence && (
-                        <div className="grid grid-cols-1 gap-3 pt-1 border-t border-slate-100 pl-6 space-y-2">
+                        <div className="grid grid-cols-1 gap-3 pt-1 border-t border-slate-100 space-y-2">
                           <div className="space-y-1">
-                            <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">How to Alert</label>
+                            <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Alert based on:</label>
                             <select
                               id="quick-maint-rec-type"
                               value={quickMaintScheduleType}
@@ -1423,10 +1516,10 @@ export default function App() {
                                 <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider block">Due Odometer ({preferences.distanceUnit})</label>
                                 <input
                                   id="quick-maint-next-odo"
-                                  type="number"
+                                  type="text"
                                   placeholder="Due mileage"
-                                  value={quickMaintNextDueOdometer}
-                                  onChange={(e) => setQuickMaintNextDueOdometer(e.target.value === '' ? '' : Number(e.target.value))}
+                                  value={formatNumberWithCommas(quickMaintNextDueOdometer)}
+                                  onChange={(e) => { const rawVal = parseNumberFromCommas(e.target.value); if (rawVal === '' || /^\d*\.?\d*$/.test(rawVal)) { setQuickMaintNextDueOdometer(rawVal); } }}
                                   className="w-full h-9 px-2.5 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 text-xs focus:outline-none focus:border-indigo-500 font-semibold min-w-0"
                                 />
                               </div>
@@ -1449,53 +1542,6 @@ export default function App() {
                       )}
                     </div>
                   )}
-
-                  {/* Photo Upload */}
-                  <div className="space-y-1">
-                    <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider block">Service Photo (Optional)</label>
-                    <div 
-                      className="flex flex-col items-center justify-center p-4 border border-dashed border-slate-200 rounded-xl bg-slate-50 hover:bg-slate-100 transition gap-2 text-center cursor-pointer relative"
-                      onDragOver={(e) => e.preventDefault()}
-                      onDrop={(e) => {
-                        e.preventDefault();
-                        const file = e.dataTransfer.files?.[0];
-                        if (file) {
-                          handleQuickPhotoChange(file, setQuickMaintReceiptPhoto);
-                        }
-                      }}
-                      onClick={() => document.getElementById('quick-maint-photo-input')?.click()}
-                    >
-                      <input
-                        id="quick-maint-photo-input"
-                        type="file"
-                        accept="image/*"
-                        onChange={(e) => {
-                          const file = e.target.files?.[0];
-                          if (file) {
-                            handleQuickPhotoChange(file, setQuickMaintReceiptPhoto);
-                          }
-                        }}
-                        className="hidden"
-                      />
-                      <Camera className="h-5 w-5 text-slate-400" />
-                      <span className="text-xs font-semibold text-slate-600">Drag & Drop or Click to upload photo</span>
-                      {quickMaintReceiptPhoto ? (
-                        <div className="mt-2 flex items-center gap-2 bg-white border border-slate-200 px-3 py-1.5 rounded-lg shadow-sm max-w-xs" onClick={(e) => e.stopPropagation()}>
-                          <img src={quickMaintReceiptPhoto} alt="Preview" className="h-8 w-8 object-cover rounded-md" />
-                          <span className="text-xs text-emerald-600 font-bold truncate">Photo Attached</span>
-                          <button 
-                            type="button" 
-                            onClick={() => setQuickMaintReceiptPhoto('')} 
-                            className="text-slate-400 hover:text-rose-500 font-semibold text-xs ml-1 cursor-pointer"
-                          >
-                            Remove
-                          </button>
-                        </div>
-                      ) : (
-                        <span className="text-[10px] text-slate-400">JPEG/PNG, Max 1.5MB</span>
-                      )}
-                    </div>
-                  </div>
                 </div>
               )}
             </div>

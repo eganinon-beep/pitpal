@@ -160,3 +160,27 @@ export function getVehiclesColorMap(hex: string): { bg: string; text: string; bo
     }
   };
 }
+
+/**
+ * Formats a string or number with commas for visual presentation as user types.
+ */
+export function formatNumberWithCommas(value: string | number | undefined | null): string {
+  if (value === undefined || value === null || value === '') return '';
+  const str = String(value);
+  const parts = str.split('.');
+  const cleanInt = parts[0].replace(/[^\d-]/g, '');
+  const formattedInt = cleanInt ? Number(cleanInt).toLocaleString('en-US') : '';
+  if (parts.length > 1) {
+    const cleanDec = parts[1].replace(/[^\d]/g, '');
+    return `${formattedInt}.${cleanDec}`;
+  }
+  return formattedInt;
+}
+
+/**
+ * Parses out commas from formatted string.
+ */
+export function parseNumberFromCommas(value: string): string {
+  return value.replace(/,/g, '');
+}
+

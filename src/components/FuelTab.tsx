@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
+import {motion, AnimatePresence } from 'motion/react';
 import { Droplet, Plus, Trash2, Calendar, Gauge, Trash, Info, Check, X, AlertCircle, Camera, Image as ImageIcon } from 'lucide-react';
 import { FuelRefill, Vehicle, UserPreferences } from '../types';
-import { formatCurrency, formatEfficiency, formatDate, calculateRefillEfficiencies } from '../utils';
+import { formatCurrency, formatEfficiency, formatDate, calculateRefillEfficiencies, formatNumberWithCommas, parseNumberFromCommas } from '../utils';
 
 interface FuelTabProps {
   refills: FuelRefill[];
@@ -33,9 +33,9 @@ export default function FuelTab({
   const [vehicleId, setVehicleId] = useState(
     selectedVehicleId !== 'all' ? selectedVehicleId : vehicles[0]?.id || ''
   );
-  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
-  const [odometer, setOdometer] = useState<number | ''>('');
-  const [volume, setVolume] = useState<number | ''>('');
+  const [date, setDate] = useState('');
+  const [odometer, setOdometer] = useState<number | string>('');
+  const [volume, setVolume] = useState<number | string>('');
   const [pricePerUnit, setPricePerUnit] = useState<string>('');
   const [totalCost, setTotalCost] = useState<string>('');
   const [fullTank, setFullTank] = useState(true);
@@ -74,13 +74,48 @@ export default function FuelTab({
     (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
   );
 
-  // Auto-calculate Total Cost when volume or price changes
-  useEffect(() => {
-    if (volume !== '' && pricePerUnit !== '') {
-      const calculated = Number(volume) * Number(pricePerUnit);
-      setTotalCost(calculated.toFixed(2));
+  // Auto-calculate remaining field when any two of volume, price, or total cost are provided
+  const handleVolumeChange = (val: string) => {
+    setVolume(val);
+    const v = parseFloat(val);
+    if (!isNaN(v) && v > 0) {
+      const p = parseFloat(pricePerUnit);
+      const c = parseFloat(totalCost);
+      if (!isNaN(p) && p > 0) {
+        setTotalCost(parseFloat((v * p).toFixed(2)).toString());
+      } else if (!isNaN(c) && c > 0) {
+        setPricePerUnit(parseFloat((c / v).toFixed(3)).toString());
+      }
     }
-  }, [volume, pricePerUnit]);
+  };
+
+  const handlePriceChange = (val: string) => {
+    setPricePerUnit(val);
+    const p = parseFloat(val);
+    if (!isNaN(p) && p > 0) {
+      const v = parseFloat(volume);
+      const c = parseFloat(totalCost);
+      if (!isNaN(v) && v > 0) {
+        setTotalCost(parseFloat((v * p).toFixed(2)).toString());
+      } else if (!isNaN(c) && c > 0) {
+        setVolume(parseFloat((c / p).toFixed(3)).toString());
+      }
+    }
+  };
+
+  const handleCostChange = (val: string) => {
+    setTotalCost(val);
+    const c = parseFloat(val);
+    if (!isNaN(c) && c > 0) {
+      const v = parseFloat(volume);
+      const p = parseFloat(pricePerUnit);
+      if (!isNaN(v) && v > 0) {
+        setPricePerUnit(parseFloat((c / v).toFixed(3)).toString());
+      } else if (!isNaN(p) && p > 0) {
+        setVolume(parseFloat((c / p).toFixed(3)).toString());
+      }
+    }
+  };
 
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -267,7 +302,7 @@ export default function FuelTab({
                     id="refill-vehicle-selector"
                     value={vehicleId}
                     onChange={e => setVehicleId(e.target.value)}
-                    className="w-full h-11 px-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none focus:border-indigo-500 cursor-pointer font-bold"
+                    className="w-full h-11 px-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs focus:outline-none focus:border-indigo-500 cursor-pointer font-bold"
                   >
                     {vehicles.map(v => (
                       <option key={v.id} value={v.id}>
@@ -285,7 +320,7 @@ export default function FuelTab({
                     type="date"
                     value={date}
                     onChange={e => setDate(e.target.value)}
-                    className="w-full h-11 px-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none focus:border-indigo-500 cursor-pointer font-semibold min-w-0"
+                    className="w-full h-11 px-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs focus:outline-none focus:border-indigo-500 cursor-pointer font-semibold min-w-0"
                   />
                 </div>
 
@@ -296,10 +331,11 @@ export default function FuelTab({
                   </label>
                   <input
                     id="refill-odometer-input"
-                    type="number"
-                    value={odometer}
-                    onChange={e => setOdometer(e.target.value === '' ? '' : Number(e.target.value))}
-                    className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none focus:border-indigo-500 font-semibold"
+                    type="text"
+                    placeholder="Reading during fuel refill"
+                    value={formatNumberWithCommas(odometer)}
+                    onChange={e => { const rawVal = parseNumberFromCommas(e.target.value); if (rawVal === '' || /^\d*\.?\d*$/.test(rawVal)) { setOdometer(rawVal); } }}
+                    className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs focus:outline-none focus:border-indigo-500 font-semibold"
                   />
                 </div>
 
@@ -310,11 +346,11 @@ export default function FuelTab({
                   </label>
                   <input
                     id="refill-volume-input"
-                    type="number"
+                    type="text"
                     step="0.01"
-                    value={volume}
-                    onChange={e => setVolume(e.target.value === '' ? '' : Number(e.target.value))}
-                    className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none focus:border-indigo-500 font-semibold"
+                    value={formatNumberWithCommas(volume)}
+                    onChange={e => { const rawVal = parseNumberFromCommas(e.target.value); if (rawVal === '' || /^\d*\.?\d*$/.test(rawVal)) { handleVolumeChange(rawVal); } }}
+                    className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs focus:outline-none focus:border-indigo-500 font-semibold"
                   />
                 </div>
 
@@ -325,16 +361,16 @@ export default function FuelTab({
                   </label>
                   <input
                     id="refill-price-input"
-                    type="number"
+                    type="text"
                     step="0.01"
-                    value={pricePerUnit}
-                    onChange={e => setPricePerUnit(e.target.value)}
+                    value={formatNumberWithCommas(pricePerUnit)}
+                    onChange={e => { const rawVal = parseNumberFromCommas(e.target.value); if (rawVal === '' || /^\d*\.?\d*$/.test(rawVal)) { handlePriceChange(rawVal); } }}
                     onBlur={() => {
                       if (pricePerUnit !== '') {
                         setPricePerUnit(Number(pricePerUnit).toFixed(2));
                       }
                     }}
-                    className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none focus:border-indigo-500 font-semibold"
+                    className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs focus:outline-none focus:border-indigo-500 font-semibold"
                   />
                 </div>
 
@@ -342,20 +378,20 @@ export default function FuelTab({
                 <div className="space-y-1 col-span-1 sm:col-span-2">
                   <label className="text-[10px] uppercase font-black text-slate-400 tracking-wider flex justify-between">
                     <span>Total Bill ({preferences.currency || 'USD'})</span>
-                    <span className="text-[9px] text-emerald-600 lowercase normal-case italic font-bold">Auto-calculated</span>
+                    <span className="text-[9px] text-indigo-600 lowercase normal-case italic font-bold">Auto-calculates missing field</span>
                   </label>
                   <input
                     id="refill-totalcase-input"
-                    type="number"
+                    type="text"
                     step="0.01"
-                    value={totalCost}
-                    onChange={e => setTotalCost(e.target.value)}
+                    value={formatNumberWithCommas(totalCost)}
+                    onChange={e => { const rawVal = parseNumberFromCommas(e.target.value); if (rawVal === '' || /^\d*\.?\d*$/.test(rawVal)) { handleCostChange(rawVal); } }}
                     onBlur={() => {
                       if (totalCost !== '') {
                         setTotalCost(Number(totalCost).toFixed(2));
                       }
                     }}
-                    className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-emerald-650 font-black text-sm focus:outline-none focus:border-indigo-500"
+                    className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-emerald-650 font-black text-xs focus:outline-none focus:border-indigo-500"
                   />
                 </div>
 
@@ -367,7 +403,7 @@ export default function FuelTab({
                     type="text"
                     value={gasStation}
                     onChange={e => setGasStation(e.target.value)}
-                    className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none focus:border-indigo-500 font-semibold"
+                    className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs focus:outline-none focus:border-indigo-500 font-semibold"
                   />
                 </div>
 
@@ -379,7 +415,7 @@ export default function FuelTab({
                     type="text"
                     value={fuelBrand}
                     onChange={e => setFuelBrand(e.target.value)}
-                    className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none focus:border-indigo-500 font-semibold"
+                    className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs focus:outline-none focus:border-indigo-500 font-semibold"
                   />
                   <span className="text-[10px] text-slate-400 block font-semibold leading-tight">Octane 93, XCS, VPower, Gold, etc.</span>
                 </div>
@@ -392,7 +428,7 @@ export default function FuelTab({
                     type="text"
                     value={notes}
                     onChange={e => setNotes(e.target.value)}
-                    className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none focus:border-indigo-500 font-semibold"
+                    className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs focus:outline-none focus:border-indigo-500 font-semibold"
                   />
                 </div>
 

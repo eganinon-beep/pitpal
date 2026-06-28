@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
+import {motion, AnimatePresence } from 'motion/react';
 import { Car, Plus, Trash2, Calendar, FileText, Check, X, Edit, Gauge, Truck, Bike, Droplet, Wrench, Bus, Camera, ImageIcon, Pipette } from 'lucide-react';
 import { Vehicle, FuelRefill, MaintenanceLog, UserPreferences } from '../types';
-import { formatCurrency, getVehiclesColorMap, formatDate } from '../utils';
+import { formatCurrency, getVehiclesColorMap, formatDate, formatNumberWithCommas, parseNumberFromCommas } from '../utils';
 import FuelTab from './FuelTab';
 import MaintenanceTab from './MaintenanceTab';
 
@@ -132,7 +132,7 @@ export default function VehiclesTab({
   const [model, setModel] = useState('');
   const [year, setYear] = useState(new Date().getFullYear());
   const [licensePlate, setLicensePlate] = useState('');
-  const [currentOdometer, setCurrentOdometer] = useState<number | ''>('');
+  const [currentOdometer, setCurrentOdometer] = useState<number | string>('');
   const [color, setColor] = useState(VEHICLE_COLORS[0]);
   const [notes, setNotes] = useState('');
 
@@ -147,7 +147,7 @@ export default function VehiclesTab({
   const [editModel, setEditModel] = useState('');
   const [editYear, setEditYear] = useState(new Date().getFullYear());
   const [editLicensePlate, setEditLicensePlate] = useState('');
-  const [editCurrentOdometer, setEditCurrentOdometer] = useState<number | ''>('');
+  const [editCurrentOdometer, setEditCurrentOdometer] = useState<number | string>('');
   const [editColor, setEditColor] = useState('');
   const [editNotes, setEditNotes] = useState('');
   const [editFormError, setEditFormError] = useState('');
@@ -176,13 +176,13 @@ export default function VehiclesTab({
 
   // States for selected activity's editable fields
   const [actDate, setActDate] = useState('');
-  const [actOdometer, setActOdometer] = useState<number | ''>('');
+  const [actOdometer, setActOdometer] = useState<number | string>('');
   const [actNotes, setActNotes] = useState('');
   
   // Fuel Refill specific fields
-  const [actVolume, setActVolume] = useState<number | ''>('');
-  const [actPricePerUnit, setActPricePerUnit] = useState<number | ''>('');
-  const [actTotalCost, setActTotalCost] = useState<number | ''>('');
+  const [actVolume, setActVolume] = useState<number | string>('');
+  const [actPricePerUnit, setActPricePerUnit] = useState<number | string>('');
+  const [actTotalCost, setActTotalCost] = useState<number | string>('');
   const [actGasStation, setActGasStation] = useState('');
   const [actFuelBrand, setActFuelBrand] = useState('');
   const [actFullTank, setActFullTank] = useState(true);
@@ -190,7 +190,7 @@ export default function VehiclesTab({
   // Service Log specific fields
   const [actServiceType, setActServiceType] = useState('');
   const [actTitle, setActTitle] = useState('');
-  const [actCost, setActCost] = useState<number | ''>('');
+  const [actCost, setActCost] = useState<number | string>('');
   const [actProvider, setActProvider] = useState('');
   const [actStatus, setActStatus] = useState<'Scheduled' | 'Completed'>('Completed');
   const [actNextDueDate, setActNextDueDate] = useState('');
@@ -997,7 +997,7 @@ export default function VehiclesTab({
             >
           <div className="flex justify-between items-center pb-2 border-b border-slate-100">
             <h3 className="text-xs font-bold text-slate-900 flex items-center gap-2">
-              <Car className="h-4 w-4 text-indigo-600" /> New Vehicle Profile
+              <Car className="h-4 w-4 text-indigo-600" /> Add New Vehicle
             </h3>
             <button 
               id="cancel-add-vehicle-btn"
@@ -1115,10 +1115,10 @@ export default function VehiclesTab({
                 </label>
                 <input
                   id="vehicle-odometer-input"
-                  type="number"
+                  type="text"
                   placeholder="e.g. 45000"
-                  value={currentOdometer}
-                  onChange={e => setCurrentOdometer(e.target.value === '' ? '' : Number(e.target.value))}
+                  value={formatNumberWithCommas(currentOdometer)}
+                  onChange={e => { const rawVal = parseNumberFromCommas(e.target.value); if (rawVal === '' || /^\d*\.?\d*$/.test(rawVal)) { setCurrentOdometer(rawVal); } }}
                   className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs focus:outline-none focus:border-indigo-500 font-semibold"
                 />
               </div>
@@ -1534,10 +1534,10 @@ export default function VehiclesTab({
                     </label>
                     <input
                       id="edit-vehicle-odometer-input"
-                      type="number"
+                      type="text"
                       placeholder="e.g. 45000"
-                      value={editCurrentOdometer}
-                      onChange={e => setEditCurrentOdometer(e.target.value === '' ? '' : Number(e.target.value))}
+                      value={formatNumberWithCommas(editCurrentOdometer)}
+                      onChange={e => { const rawVal = parseNumberFromCommas(e.target.value); if (rawVal === '' || /^\d*\.?\d*$/.test(rawVal)) { setEditCurrentOdometer(rawVal); } }}
                       className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs focus:outline-none focus:border-indigo-500 font-semibold"
                     />
                   </div>
@@ -1830,9 +1830,10 @@ export default function VehiclesTab({
                       </label>
                       <input
                         id="act-odometer-input"
-                        type="number"
-                        value={actOdometer}
-                        onChange={e => setActOdometer(e.target.value === '' ? '' : Number(e.target.value))}
+                        type="text"
+                        placeholder={selectedActivity.type === 'refill' ? "Reading during fuel refill" : selectedActivity.type === 'maintenance' ? "Reading during service" : ""}
+                        value={formatNumberWithCommas(actOdometer)}
+                        onChange={e => { const rawVal = parseNumberFromCommas(e.target.value); if (rawVal === '' || /^\d*\.?\d*$/.test(rawVal)) { setActOdometer(rawVal); } }}
                         className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs focus:outline-none focus:border-indigo-500 font-semibold"
                       />
                     </div>
@@ -1857,10 +1858,10 @@ export default function VehiclesTab({
                           <label className="text-[8px] uppercase font-bold text-slate-400 tracking-wider">Volume ({preferences.volumeUnit}) *</label>
                           <input
                             id="act-volume-input"
-                            type="number"
+                            type="text"
                             step="any"
-                            value={actVolume}
-                            onChange={e => setActVolume(e.target.value === '' ? '' : Number(e.target.value))}
+                            value={formatNumberWithCommas(actVolume)}
+                            onChange={e => { const rawVal = parseNumberFromCommas(e.target.value); if (rawVal === '' || /^\d*\.?\d*$/.test(rawVal)) { setActVolume(rawVal); } }}
                             className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs focus:outline-none focus:border-indigo-500 font-semibold"
                           />
                         </div>
@@ -1868,22 +1869,22 @@ export default function VehiclesTab({
                           <label className="text-[8px] uppercase font-bold text-slate-400 tracking-wider">Price per {preferences.volumeUnit} *</label>
                           <input
                             id="act-price-input"
-                            type="number"
+                            type="text"
                             step="any"
-                            value={actPricePerUnit}
-                            onChange={e => setActPricePerUnit(e.target.value === '' ? '' : Number(e.target.value))}
+                            value={formatNumberWithCommas(actPricePerUnit)}
+                            onChange={e => { const rawVal = parseNumberFromCommas(e.target.value); if (rawVal === '' || /^\d*\.?\d*$/.test(rawVal)) { setActPricePerUnit(rawVal); } }}
                             className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs focus:outline-none focus:border-indigo-500 font-semibold"
                           />
                         </div>
-                        <div className="space-y-1">
+                        <div className="space-y-1 col-span-1 sm:col-span-2">
                           <label className="text-[8px] uppercase font-bold text-slate-400 tracking-wider">Total Cost</label>
                           <input
                             id="act-cost-input"
-                            type="number"
+                            type="text"
                             step="any"
                             placeholder="Optional"
-                            value={actTotalCost}
-                            onChange={e => setActTotalCost(e.target.value === '' ? '' : Number(e.target.value))}
+                            value={formatNumberWithCommas(actTotalCost)}
+                            onChange={e => { const rawVal = parseNumberFromCommas(e.target.value); if (rawVal === '' || /^\d*\.?\d*$/.test(rawVal)) { setActTotalCost(rawVal); } }}
                             className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs focus:outline-none focus:border-indigo-500 font-semibold"
                           />
                         </div>
@@ -1897,7 +1898,7 @@ export default function VehiclesTab({
                             className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs focus:outline-none focus:border-indigo-500 font-semibold"
                           />
                         </div>
-                        <div className="space-y-1 col-span-1 sm:col-span-2">
+                        <div className="space-y-1">
                           <label className="text-[8px] uppercase font-bold text-slate-400 tracking-wider">Fuel Brand</label>
                           <input
                             id="act-brand-input"
@@ -1938,9 +1939,9 @@ export default function VehiclesTab({
                           <label className="text-[8px] uppercase font-bold text-slate-400 tracking-wider">Cost</label>
                           <input
                             id="act-maintcost-input"
-                            type="number"
-                            value={actCost}
-                            onChange={e => setActCost(e.target.value === '' ? '' : Number(e.target.value))}
+                            type="text"
+                            value={formatNumberWithCommas(actCost)}
+                            onChange={e => { const rawVal = parseNumberFromCommas(e.target.value); if (rawVal === '' || /^\d*\.?\d*$/.test(rawVal)) { setActCost(rawVal); } }}
                             className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs focus:outline-none focus:border-indigo-500 font-semibold"
                           />
                         </div>
