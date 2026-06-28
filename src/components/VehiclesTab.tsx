@@ -1813,7 +1813,7 @@ export default function VehiclesTab({
               {isEditingActivity && (
                 <div className="space-y-4">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-slate-800 text-xs">
-                    <div className="space-y-1 col-span-1 sm:col-span-2">
+                    <div className="space-y-1 col-span-1 sm:col-span-2 min-w-0">
                       <label className="text-[8px] uppercase font-bold text-slate-400 tracking-wider">Date *</label>
                       <input
                         id="act-date-input"
@@ -1824,7 +1824,7 @@ export default function VehiclesTab({
                       />
                     </div>
 
-                    <div className="space-y-1 col-span-2">
+                    <div className="space-y-1 col-span-1 sm:col-span-2 min-w-0">
                       <label className="text-[8px] uppercase font-bold text-slate-400 tracking-wider">
                         Odometer Reading ({preferences.distanceUnit}) *
                       </label>

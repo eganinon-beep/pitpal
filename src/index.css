@@ -28,17 +28,30 @@ html, body, #root {
   }
 }
 
-/* Fix date fields overflowing adjacent fields in grid layouts */
+/* Fix date fields overflowing adjacent fields in grid layouts on mobile (like iOS Safari) */
 input[type="date"] {
   min-width: 0 !important;
   width: 100% !important;
   max-width: 100% !important;
   box-sizing: border-box;
+  -webkit-appearance: none;
+  appearance: none;
+  display: flex;
+  align-items: center;
+}
+
+/* Ensure proper text vertical centering and alignment on iOS Safari */
+input[type="date"]::-webkit-date-and-time-value {
+  text-align: left;
+  min-height: 1.5em;
+  margin: 0;
+  padding: 0;
+  width: 100%;
 }
 
 /* Ensure any grid item containing input fields can shrink on narrow screens */
-.grid > div {
-  min-width: 0;
+.grid > *, .grid > div {
+  min-width: 0 !important;
 }
 
 

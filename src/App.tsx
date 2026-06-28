@@ -703,14 +703,14 @@ export default function App() {
               )}
 
               {/* Date Input */}
-              <div className="space-y-1">
+              <div className="space-y-1 min-w-0">
                 <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider block">Date</label>
                 <input
                   id="record-mileage-date-input"
                   type="date"
                   value={newMileageDate}
                   onChange={(e) => setNewMileageDate(e.target.value)}
-                  className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none focus:border-indigo-500 font-semibold"
+                  className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none focus:border-indigo-500 font-semibold min-w-0"
                 />
               </div>
 

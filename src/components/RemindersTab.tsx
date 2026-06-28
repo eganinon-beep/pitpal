@@ -290,7 +290,7 @@ export default function RemindersTab({
                 </div>
 
                 {/* Expiration Date */}
-                <div className="col-span-1 sm:col-span-2 space-y-1">
+                <div className="col-span-1 sm:col-span-2 space-y-1 min-w-0">
                   <label className="text-[8px] uppercase font-bold text-slate-400 tracking-wider">Expiration Date *</label>
                   <input
                     id="reminder-date-input"
