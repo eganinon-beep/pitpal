@@ -237,9 +237,9 @@ export default function MaintenanceTab({
                 </div>
               )}
 
-              <div className="grid grid-cols-2 gap-3.5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 {/* Vehicle Selection */}
-                <div className="col-span-2 space-y-1">
+                <div className="col-span-1 sm:col-span-2 space-y-1">
                   <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Vehicle</label>
                   <select
                     id="maint-vehicle-selector"
@@ -256,7 +256,7 @@ export default function MaintenanceTab({
                 </div>
 
                 {/* Status Toggle (Aesthetic buttons) */}
-                <div className="col-span-2 space-y-1">
+                <div className="col-span-1 sm:col-span-2 space-y-1">
                   <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Status</label>
                   <div className="grid grid-cols-2 gap-2">
                     <button
@@ -287,7 +287,7 @@ export default function MaintenanceTab({
                 </div>
 
                 {/* Service Input */}
-                <div className="col-span-2 space-y-1">
+                <div className="col-span-1 sm:col-span-2 space-y-1">
                   <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Service</label>
                   <input
                     id="maint-service-type-input"
@@ -300,7 +300,7 @@ export default function MaintenanceTab({
                 </div>
 
                 {/* Service Notes */}
-                <div className="col-span-2 space-y-1">
+                <div className="col-span-1 sm:col-span-2 space-y-1">
                   <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Service Notes</label>
                   <input
                     id="maint-title-input"
@@ -348,8 +348,8 @@ export default function MaintenanceTab({
 
                 {/* If scheduled, show Basis selector and fields */}
                 {status === 'Scheduled' && (
-                  <div className="col-span-2 grid grid-cols-2 gap-3.5">
-                    <div className="col-span-2 space-y-1">
+                  <div className="col-span-1 sm:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                    <div className="col-span-1 sm:col-span-2 space-y-1">
                       <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Reminder Basis *</label>
                       <select
                         id="maint-schedule-type-selector-scheduled"
@@ -434,7 +434,7 @@ export default function MaintenanceTab({
 
                 {/* Recurrence (Only if completed) */}
                 {status === 'Completed' && (
-                  <div className="col-span-2 border-t border-slate-100 pt-3 mt-1 space-y-3">
+                  <div className="col-span-1 sm:col-span-2 border-t border-slate-100 pt-3 mt-1 space-y-3">
                     <label className="flex items-center gap-2.5 cursor-pointer text-slate-700 font-semibold select-none">
                       <input
                         id="maint-recurrence-checkbox"
@@ -462,7 +462,7 @@ export default function MaintenanceTab({
                           </select>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-3 pb-1">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pb-1">
                           <div className="space-y-1 min-w-0">
                             <label className={`text-[9px] uppercase font-black ${scheduleType === 'Mileage-Only' ? 'text-slate-300' : 'text-slate-400'}`}>
                               Next Service Date {scheduleType !== 'Mileage-Only' && '*'}
@@ -501,7 +501,7 @@ export default function MaintenanceTab({
                 )}
 
                 {/* Notes */}
-                <div className="col-span-2 space-y-1">
+                <div className="col-span-1 sm:col-span-2 space-y-1">
                   <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Service Notes</label>
                   <textarea
                     id="maint-notes-textarea"

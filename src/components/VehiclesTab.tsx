@@ -1812,8 +1812,8 @@ export default function VehiclesTab({
               {/* EDIT FORM MODE */}
               {isEditingActivity && (
                 <div className="space-y-4">
-                  <div className="grid grid-cols-2 gap-3 text-slate-800 text-xs">
-                    <div className="space-y-1 col-span-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-slate-800 text-xs">
+                    <div className="space-y-1 col-span-1 sm:col-span-2">
                       <label className="text-[8px] uppercase font-bold text-slate-400 tracking-wider">Date *</label>
                       <input
                         id="act-date-input"
@@ -1840,7 +1840,7 @@ export default function VehiclesTab({
                     {/* Fuel Refill Fields */}
                     {selectedActivity.type === 'refill' && (
                       <>
-                        <div className="col-span-2 flex items-center gap-2 py-1">
+                        <div className="col-span-1 sm:col-span-2 flex items-center gap-2 py-1">
                           <input
                             id="act-fulltank-checkbox"
                             type="checkbox"
@@ -1897,7 +1897,7 @@ export default function VehiclesTab({
                             className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs focus:outline-none focus:border-indigo-500 font-semibold"
                           />
                         </div>
-                        <div className="space-y-1 col-span-2">
+                        <div className="space-y-1 col-span-1 sm:col-span-2">
                           <label className="text-[8px] uppercase font-bold text-slate-400 tracking-wider">Fuel Brand</label>
                           <input
                             id="act-brand-input"
@@ -1913,7 +1913,7 @@ export default function VehiclesTab({
                     {/* Maintenance Fields */}
                     {selectedActivity.type === 'maintenance' && (
                       <>
-                        <div className="space-y-1 col-span-2">
+                        <div className="space-y-1 col-span-1 sm:col-span-2">
                           <label className="text-[8px] uppercase font-bold text-slate-400 tracking-wider">Service Name *</label>
                           <input
                             id="act-servicetype-input"
@@ -1923,7 +1923,7 @@ export default function VehiclesTab({
                             className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs focus:outline-none focus:border-indigo-500 font-semibold"
                           />
                         </div>
-                        <div className="space-y-1 col-span-2">
+                        <div className="space-y-1 col-span-1 sm:col-span-2">
                           <label className="text-[8px] uppercase font-bold text-slate-400 tracking-wider">Description (Optional)</label>
                           <input
                             id="act-title-input"
@@ -1954,7 +1954,7 @@ export default function VehiclesTab({
                             className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs focus:outline-none focus:border-indigo-500 font-semibold"
                           />
                         </div>
-                        <div className="space-y-1 col-span-2">
+                        <div className="space-y-1 col-span-1 sm:col-span-2">
                           <label className="text-[8px] uppercase font-bold text-slate-400 tracking-wider">Status</label>
                           <select
                             id="act-status-select"
@@ -1970,7 +1970,7 @@ export default function VehiclesTab({
                     )}
 
                     {(selectedActivity.type === 'refill' || (selectedActivity.type === 'maintenance' && actStatus === 'Completed')) && !selectedActivity.receiptPhoto && (
-                      <div className="space-y-1 col-span-2">
+                      <div className="space-y-1 col-span-1 sm:col-span-2">
                         <label className="text-[8px] uppercase font-bold text-slate-400 tracking-wider block">Receipt Photo (Optional)</label>
                         <div className="flex items-center gap-2.5">
                           <input
@@ -2007,7 +2007,7 @@ export default function VehiclesTab({
                       </div>
                     )}
 
-                    <div className="space-y-1 col-span-2">
+                    <div className="space-y-1 col-span-1 sm:col-span-2">
                       <label className="text-[8px] uppercase font-bold text-slate-400 tracking-wider">Notes</label>
                       <textarea
                         id="act-notes-input"

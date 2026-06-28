@@ -919,7 +919,7 @@ export default function App() {
                     </select>
                   </div>
 
-                   <div className="grid grid-cols-2 gap-4">
+                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                      {/* Date */}
                      <div className="space-y-1 min-w-0">
                        <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider block">Refill Date</label>
@@ -1305,7 +1305,7 @@ export default function App() {
                     </div>
                   )}
 
-                   <div className="grid grid-cols-2 gap-4">
+                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                      {/* Date Performed / Date Scheduled */}
                      {!(quickMaintStatus === 'Scheduled' && quickMaintScheduleType === 'Mileage-Only') && (
                        <div className="space-y-1 min-w-0">
@@ -1402,7 +1402,7 @@ export default function App() {
                               <option value="Mileage-Only">Mileage Only</option>
                             </select>
                           </div>
-                          <div className="grid grid-cols-2 gap-3">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             {/* Next Date */}
                             {quickMaintScheduleType !== 'Mileage-Only' && (
                               <div className="space-y-1 min-w-0">

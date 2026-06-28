@@ -243,9 +243,9 @@ export default function RemindersTab({
                 </div>
               )}
 
-              <div className="grid grid-cols-2 gap-3.5 text-xs">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 text-xs">
                 {/* Associated Vehicle */}
-                <div className="col-span-2 space-y-1">
+                <div className="col-span-1 sm:col-span-2 space-y-1">
                   <label className="text-[8px] uppercase font-bold text-slate-400 tracking-wider">Associated Vehicle</label>
                   <select
                     id="reminder-car-selector"
@@ -263,7 +263,7 @@ export default function RemindersTab({
                 </div>
 
                 {/* Document Type */}
-                <div className="col-span-2 space-y-1">
+                <div className="col-span-1 sm:col-span-2 space-y-1">
                   <label className="text-[8px] uppercase font-bold text-slate-400 tracking-wider">Document Type</label>
                   <select
                     id="reminder-type-selector"
@@ -278,7 +278,7 @@ export default function RemindersTab({
                 </div>
 
                 {/* Document Title */}
-                <div className="col-span-2 space-y-1">
+                <div className="col-span-1 sm:col-span-2 space-y-1">
                   <label className="text-[8px] uppercase font-bold text-slate-400 tracking-wider">Document Title *</label>
                   <input
                     id="reminder-title-input"
@@ -290,7 +290,7 @@ export default function RemindersTab({
                 </div>
 
                 {/* Expiration Date */}
-                <div className="col-span-2 space-y-1">
+                <div className="col-span-1 sm:col-span-2 space-y-1">
                   <label className="text-[8px] uppercase font-bold text-slate-400 tracking-wider">Expiration Date *</label>
                   <input
                     id="reminder-date-input"
@@ -302,7 +302,7 @@ export default function RemindersTab({
                 </div>
 
                 {/* Warning Alert Days */}
-                <div className="col-span-2 space-y-1">
+                <div className="col-span-1 sm:col-span-2 space-y-1">
                   <label className="text-[8px] uppercase font-bold text-slate-400 tracking-wider">Alert warning days</label>
                   <select
                     id="reminder-alert-days-selector"
@@ -319,7 +319,7 @@ export default function RemindersTab({
                 </div>
 
                 {/* Notes */}
-                <div className="col-span-2 space-y-1">
+                <div className="col-span-1 sm:col-span-2 space-y-1">
                   <label className="text-[8px] uppercase font-bold text-slate-400 tracking-wider">Document Details & Notes</label>
                   <textarea
                     id="reminder-notes-input"

@@ -242,9 +242,9 @@ export default function FuelTab({
                 </div>
               )}
 
-              <div className="grid grid-cols-2 gap-3.5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 {/* Full Tank Toggle */}
-                <div className="col-span-2 py-1">
+                <div className="col-span-1 sm:col-span-2 py-1">
                   <label className="flex items-center gap-2.5 cursor-pointer text-slate-700 hover:text-slate-900 select-none">
                     <input
                       id="refill-fulltank-checkbox"
@@ -261,8 +261,8 @@ export default function FuelTab({
                 </div>
 
                 {/* Vehicle Selector */}
-                <div className="col-span-2 space-y-1">
-                  <label className="text-[10px] uppercase font-bold text-slate-450 tracking-wider text-slate-450">Select Vehicle</label>
+                <div className="col-span-1 sm:col-span-2 space-y-1">
+                  <label className="text-[10px] uppercase font-bold text-slate-455 tracking-wider text-slate-450">Select Vehicle</label>
                   <select
                     id="refill-vehicle-selector"
                     value={vehicleId}
@@ -339,7 +339,7 @@ export default function FuelTab({
                 </div>
 
                 {/* Total Cost */}
-                <div className="space-y-1 col-span-2">
+                <div className="space-y-1 col-span-1 sm:col-span-2">
                   <label className="text-[10px] uppercase font-black text-slate-400 tracking-wider flex justify-between">
                     <span>Total Bill ({preferences.currency || 'USD'})</span>
                     <span className="text-[9px] text-emerald-600 lowercase normal-case italic font-bold">Auto-calculated</span>
@@ -360,7 +360,7 @@ export default function FuelTab({
                 </div>
 
                 {/* Gas Station */}
-                <div className="col-span-2 space-y-1">
+                <div className="col-span-1 sm:col-span-2 space-y-1">
                   <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Gas Station</label>
                   <input
                     id="refill-gas-station-input"
@@ -372,7 +372,7 @@ export default function FuelTab({
                 </div>
 
                 {/* Fuel Brand */}
-                <div className="col-span-2 space-y-1">
+                <div className="col-span-1 sm:col-span-2 space-y-1">
                   <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Fuel Brand</label>
                   <input
                     id="refill-fuel-brand-input"
@@ -385,7 +385,7 @@ export default function FuelTab({
                 </div>
 
                 {/* Notes */}
-                <div className="col-span-2 space-y-1">
+                <div className="col-span-1 sm:col-span-2 space-y-1">
                   <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Notes</label>
                   <input
                     id="refill-notes-input"
@@ -397,7 +397,7 @@ export default function FuelTab({
                 </div>
 
                 {/* Photo Upload of Receipt */}
-                <div className="col-span-2 space-y-1">
+                <div className="col-span-1 sm:col-span-2 space-y-1">
                   <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider block">Receipt Photo (Optional)</label>
                   <div className="flex flex-col items-center justify-center p-4 border border-dashed border-slate-200 rounded-xl bg-slate-50 hover:bg-slate-100 transition gap-3 text-center">
                     <input
