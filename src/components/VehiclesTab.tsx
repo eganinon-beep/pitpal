@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import {motion, AnimatePresence } from 'motion/react';
 import { Car, Plus, Trash2, Calendar, FileText, Check, X, Edit, Gauge, Truck, Bike, Droplet, Wrench, Bus, Camera, ImageIcon, Pipette } from 'lucide-react';
 import { Vehicle, FuelRefill, MaintenanceLog, UserPreferences } from '../types';
-import { formatCurrency, getVehiclesColorMap, formatDate, formatNumberWithCommas, parseNumberFromCommas } from '../utils';
+import { formatCurrency, getVehiclesColorMap, formatDate, formatNumberWithCommas, parseNumberFromCommas, getGasStationSuggestions, getFuelBrandSuggestions, saveGasStationEntry, saveFuelBrandEntry } from '../utils';
 import FuelTab from './FuelTab';
 import MaintenanceTab from './MaintenanceTab';
 
@@ -186,6 +186,7 @@ export default function VehiclesTab({
   const [actGasStation, setActGasStation] = useState('');
   const [actFuelBrand, setActFuelBrand] = useState('');
   const [actFullTank, setActFullTank] = useState(true);
+  const [actFuelEditHistory, setActFuelEditHistory] = useState<('volume' | 'price' | 'cost')[]>([]);
 
   // Service Log specific fields
   const [actServiceType, setActServiceType] = useState('');
@@ -215,6 +216,7 @@ export default function VehiclesTab({
       setActFuelBrand(originalRefill.fuelBrand || '');
       setActFullTank(originalRefill.fullTank);
       setActReceiptPhoto(originalRefill.receiptPhoto || '');
+      setActFuelEditHistory(['volume', 'price']);
     } else {
       const originalLog = maintenanceLogs.find(m => m.id === item.id);
       if (!originalLog) return;
@@ -234,6 +236,68 @@ export default function VehiclesTab({
       setActNextDueOdometer(originalLog.nextDueOdometer !== undefined ? originalLog.nextDueOdometer : '');
       setActReceiptPhoto(originalLog.receiptPhoto || '');
     }
+  };
+
+  const updateActFuelHistoryAndCalculate = (
+    fieldChanged: 'volume' | 'price' | 'cost',
+    nextValue: string
+  ) => {
+    const nextHistory = actFuelEditHistory.filter(f => f !== fieldChanged);
+    nextHistory.push(fieldChanged);
+    setActFuelEditHistory(nextHistory);
+
+    const currentValues = {
+      volume: fieldChanged === 'volume' ? nextValue : actVolume.toString(),
+      price: fieldChanged === 'price' ? nextValue : actPricePerUnit.toString(),
+      cost: fieldChanged === 'cost' ? nextValue : actTotalCost.toString(),
+    };
+
+    if (nextHistory.length >= 2) {
+      const lastTwo = nextHistory.slice(-2);
+      const target = (['volume', 'price', 'cost'] as const).find(f => !lastTwo.includes(f));
+      
+      if (target) {
+        const valA = parseFloat(currentValues[lastTwo[0]]);
+        const valB = parseFloat(currentValues[lastTwo[1]]);
+
+        if (!isNaN(valA) && valA > 0 && !isNaN(valB) && valB > 0) {
+          if (target === 'cost') {
+            const v = parseFloat(currentValues.volume);
+            const p = parseFloat(currentValues.price);
+            if (!isNaN(v) && v > 0 && !isNaN(p) && p > 0) {
+              setActTotalCost((v * p).toFixed(2));
+            }
+          } else if (target === 'volume') {
+            const c = parseFloat(currentValues.cost);
+            const p = parseFloat(currentValues.price);
+            if (!isNaN(c) && c > 0 && !isNaN(p) && p > 0) {
+              setActVolume((c / p).toFixed(2));
+            }
+          } else if (target === 'price') {
+            const c = parseFloat(currentValues.cost);
+            const v = parseFloat(currentValues.volume);
+            if (!isNaN(c) && c > 0 && !isNaN(v) && v > 0) {
+              setActPricePerUnit((c / v).toFixed(2));
+            }
+          }
+        }
+      }
+    }
+  };
+
+  const handleActVolumeChange = (val: string) => {
+    setActVolume(val);
+    updateActFuelHistoryAndCalculate('volume', val);
+  };
+
+  const handleActPriceChange = (val: string) => {
+    setActPricePerUnit(val);
+    updateActFuelHistoryAndCalculate('price', val);
+  };
+
+  const handleActCostChange = (val: string) => {
+    setActTotalCost(val);
+    updateActFuelHistoryAndCalculate('cost', val);
   };
 
   React.useEffect(() => {
@@ -310,15 +374,24 @@ export default function VehiclesTab({
         setActivityFormError('Valid price per unit is required');
         return;
       }
-      
-      const calculatedTotal = Number(actTotalCost) || (Number(actVolume) * Number(actPricePerUnit));
+      if (actTotalCost === '' || Number(actTotalCost) <= 0) {
+        setActivityFormError('Valid total cost is required');
+        return;
+      }
+
+      if (actGasStation.trim()) {
+        saveGasStationEntry(actGasStation.trim());
+      }
+      if (actFuelBrand.trim()) {
+        saveFuelBrandEntry(actFuelBrand.trim());
+      }
       
       onEditRefill(selectedActivity.id, {
         date: actDate,
         odometer: Number(actOdometer),
-        volume: Number(actVolume),
-        pricePerUnit: Number(actPricePerUnit),
-        totalCost: Number(calculatedTotal),
+        volume: Number(Number(actVolume).toFixed(2)),
+        pricePerUnit: Number(Number(actPricePerUnit).toFixed(2)),
+        totalCost: Number(Number(actTotalCost).toFixed(2)),
         gasStation: actGasStation,
         fuelBrand: actFuelBrand,
         fullTank: actFullTank,
@@ -484,8 +557,29 @@ export default function VehiclesTab({
         })
       ];
 
-      // Sort chronological descending (newest first)
+      // Sort chronological descending (newest first), but with "Scheduled" services always on top
       unifiedItems.sort((a, b) => {
+        const isScheduledA = a.type === 'maintenance' && a.status === 'Scheduled';
+        const isScheduledB = b.type === 'maintenance' && b.status === 'Scheduled';
+
+        if (isScheduledA && !isScheduledB) return -1;
+        if (!isScheduledA && isScheduledB) return 1;
+
+        if (isScheduledA && isScheduledB) {
+          const hasDateA = !!a.date && a.date !== '';
+          const hasDateB = !!b.date && b.date !== '';
+
+          if (hasDateA && hasDateB) {
+            const dateDiff = new Date(b.date).getTime() - new Date(a.date).getTime();
+            if (dateDiff !== 0) return dateDiff;
+            return b.odometer - a.odometer;
+          } else if (!hasDateA && !hasDateB) {
+            return b.odometer - a.odometer;
+          } else {
+            return hasDateA ? -1 : 1;
+          }
+        }
+
         const dateDiff = new Date(b.date).getTime() - new Date(a.date).getTime();
         if (dateDiff !== 0) return dateDiff;
         if (a.type === 'odometer' && b.type !== 'odometer') return -1;
@@ -1861,18 +1955,28 @@ export default function VehiclesTab({
                             type="text"
                             step="any"
                             value={formatNumberWithCommas(actVolume)}
-                            onChange={e => { const rawVal = parseNumberFromCommas(e.target.value); if (rawVal === '' || /^\d*\.?\d*$/.test(rawVal)) { setActVolume(rawVal); } }}
+                            onChange={e => { const rawVal = parseNumberFromCommas(e.target.value); if (rawVal === '' || /^\d*\.?\d*$/.test(rawVal)) { handleActVolumeChange(rawVal); } }}
+                            onBlur={() => {
+                              if (actVolume !== '') {
+                                setActVolume(Number(actVolume).toFixed(2));
+                              }
+                            }}
                             className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs focus:outline-none focus:border-indigo-500 font-semibold"
                           />
                         </div>
                         <div className="space-y-1">
-                          <label className="text-[8px] uppercase font-bold text-slate-400 tracking-wider">Price per {preferences.volumeUnit} *</label>
+                          <label className="text-[8px] uppercase font-bold text-slate-400 tracking-wider">PRICE ({preferences.currency || 'USD'}/{preferences.volumeUnit}) *</label>
                           <input
                             id="act-price-input"
                             type="text"
                             step="any"
                             value={formatNumberWithCommas(actPricePerUnit)}
-                            onChange={e => { const rawVal = parseNumberFromCommas(e.target.value); if (rawVal === '' || /^\d*\.?\d*$/.test(rawVal)) { setActPricePerUnit(rawVal); } }}
+                            onChange={e => { const rawVal = parseNumberFromCommas(e.target.value); if (rawVal === '' || /^\d*\.?\d*$/.test(rawVal)) { handleActPriceChange(rawVal); } }}
+                            onBlur={() => {
+                              if (actPricePerUnit !== '') {
+                                setActPricePerUnit(Number(actPricePerUnit).toFixed(2));
+                              }
+                            }}
                             className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs focus:outline-none focus:border-indigo-500 font-semibold"
                           />
                         </div>
@@ -1884,7 +1988,12 @@ export default function VehiclesTab({
                             step="any"
                             placeholder="Optional"
                             value={formatNumberWithCommas(actTotalCost)}
-                            onChange={e => { const rawVal = parseNumberFromCommas(e.target.value); if (rawVal === '' || /^\d*\.?\d*$/.test(rawVal)) { setActTotalCost(rawVal); } }}
+                            onChange={e => { const rawVal = parseNumberFromCommas(e.target.value); if (rawVal === '' || /^\d*\.?\d*$/.test(rawVal)) { handleActCostChange(rawVal); } }}
+                            onBlur={() => {
+                              if (actTotalCost !== '') {
+                                setActTotalCost(Number(actTotalCost).toFixed(2));
+                              }
+                            }}
                             className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs focus:outline-none focus:border-indigo-500 font-semibold"
                           />
                         </div>
@@ -1895,8 +2004,14 @@ export default function VehiclesTab({
                             type="text"
                             value={actGasStation}
                             onChange={e => setActGasStation(e.target.value)}
+                            list="vehicle-act-stations-list"
                             className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs focus:outline-none focus:border-indigo-500 font-semibold"
                           />
+                          <datalist id="vehicle-act-stations-list">
+                            {getGasStationSuggestions(refills).map(station => (
+                              <option key={station} value={station} />
+                            ))}
+                          </datalist>
                         </div>
                         <div className="space-y-1">
                           <label className="text-[8px] uppercase font-bold text-slate-400 tracking-wider">Fuel Brand</label>
@@ -1905,8 +2020,14 @@ export default function VehiclesTab({
                             type="text"
                             value={actFuelBrand}
                             onChange={e => setActFuelBrand(e.target.value)}
+                            list="vehicle-act-brands-list"
                             className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs focus:outline-none focus:border-indigo-500 font-semibold"
                           />
+                          <datalist id="vehicle-act-brands-list">
+                            {getFuelBrandSuggestions(refills).map(brand => (
+                              <option key={brand} value={brand} />
+                            ))}
+                          </datalist>
                         </div>
                       </>
                     )}

@@ -184,3 +184,91 @@ export function parseNumberFromCommas(value: string): string {
   return value.replace(/,/g, '');
 }
 
+export function getGasStationSuggestions(refills: FuelRefill[]): string[] {
+  const fromRefills = refills.map(r => r.gasStation?.trim()).filter((v): v is string => !!v);
+  let fromStorage: string[] = [];
+  try {
+    const saved = localStorage.getItem('vc_saved_gas_stations');
+    if (saved) {
+      fromStorage = JSON.parse(saved);
+    }
+  } catch (e) {
+    console.error('Failed to parse vc_saved_gas_stations', e);
+  }
+
+  const combined = [...fromRefills, ...fromStorage];
+  const uniqueMap = new Map<string, string>();
+  combined.forEach(item => {
+    const trimmed = item.trim();
+    if (trimmed) {
+      const lower = trimmed.toLowerCase();
+      if (!uniqueMap.has(lower)) {
+        uniqueMap.set(lower, trimmed);
+      }
+    }
+  });
+
+  return Array.from(uniqueMap.values()).sort((a, b) =>
+    a.localeCompare(b, undefined, { sensitivity: 'base' })
+  );
+}
+
+export function getFuelBrandSuggestions(refills: FuelRefill[]): string[] {
+  const fromRefills = refills.map(r => r.fuelBrand?.trim()).filter((v): v is string => !!v);
+  let fromStorage: string[] = [];
+  try {
+    const saved = localStorage.getItem('vc_saved_fuel_brands');
+    if (saved) {
+      fromStorage = JSON.parse(saved);
+    }
+  } catch (e) {
+    console.error('Failed to parse vc_saved_fuel_brands', e);
+  }
+
+  const combined = [...fromRefills, ...fromStorage];
+  const uniqueMap = new Map<string, string>();
+  combined.forEach(item => {
+    const trimmed = item.trim();
+    if (trimmed) {
+      const lower = trimmed.toLowerCase();
+      if (!uniqueMap.has(lower)) {
+        uniqueMap.set(lower, trimmed);
+      }
+    }
+  });
+
+  return Array.from(uniqueMap.values()).sort((a, b) =>
+    a.localeCompare(b, undefined, { sensitivity: 'base' })
+  );
+}
+
+export function saveGasStationEntry(station: string): void {
+  const trimmed = station.trim();
+  if (!trimmed) return;
+  try {
+    const saved = localStorage.getItem('vc_saved_gas_stations');
+    const list: string[] = saved ? JSON.parse(saved) : [];
+    if (!list.some(s => s.toLowerCase() === trimmed.toLowerCase())) {
+      list.push(trimmed);
+      localStorage.setItem('vc_saved_gas_stations', JSON.stringify(list));
+    }
+  } catch (e) {
+    console.error('Failed to save gas station entry', e);
+  }
+}
+
+export function saveFuelBrandEntry(brand: string): void {
+  const trimmed = brand.trim();
+  if (!trimmed) return;
+  try {
+    const saved = localStorage.getItem('vc_saved_fuel_brands');
+    const list: string[] = saved ? JSON.parse(saved) : [];
+    if (!list.some(s => s.toLowerCase() === trimmed.toLowerCase())) {
+      list.push(trimmed);
+      localStorage.setItem('vc_saved_fuel_brands', JSON.stringify(list));
+    }
+  } catch (e) {
+    console.error('Failed to save fuel brand entry', e);
+  }
+}
+

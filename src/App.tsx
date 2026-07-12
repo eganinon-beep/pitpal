@@ -17,7 +17,7 @@ import {
 } from './initialData';
 
 import { Vehicle, FuelRefill, MaintenanceLog, RenewalReminder, UserPreferences } from './types';
-import { formatNumberWithCommas, parseNumberFromCommas } from './utils';
+import { formatNumberWithCommas, parseNumberFromCommas, getGasStationSuggestions, getFuelBrandSuggestions, saveGasStationEntry, saveFuelBrandEntry } from './utils';
 
 const getCurrencySymbol = (code: string = 'USD') => {
   const symbols: { [key: string]: string } = {
@@ -209,6 +209,7 @@ export default function App() {
   const [quickFuelNotes, setQuickFuelNotes] = useState('');
   const [quickFuelError, setQuickFuelError] = useState('');
   const [quickFuelReceiptPhoto, setQuickFuelReceiptPhoto] = useState('');
+  const [quickFuelEditHistory, setQuickFuelEditHistory] = useState<('volume' | 'price' | 'cost')[]>([]);
 
   // Quick Record Service Modal States
   const [showQuickMaintModal, setShowQuickMaintModal] = useState(false);
@@ -272,46 +273,66 @@ export default function App() {
   };
 
   // Quick Fuel auto calculation helper functions
-  const handleQuickFuelVolumeChange = (val: string) => {
-    setQuickFuelVolume(val);
-    const v = parseFloat(val);
-    if (!isNaN(v) && v > 0) {
-      const p = parseFloat(quickFuelPricePerUnit.toString());
-      const c = parseFloat(quickFuelTotalCost.toString());
-      if (!isNaN(p) && p > 0) {
-        setQuickFuelTotalCost(parseFloat((v * p).toFixed(2)).toString());
-      } else if (!isNaN(c) && c > 0) {
-        setQuickFuelPricePerUnit(parseFloat((c / v).toFixed(3)).toString());
+  const updateQuickFuelHistoryAndCalculate = (
+    fieldChanged: 'volume' | 'price' | 'cost',
+    nextValue: string
+  ) => {
+    const nextHistory = quickFuelEditHistory.filter(f => f !== fieldChanged);
+    nextHistory.push(fieldChanged);
+    setQuickFuelEditHistory(nextHistory);
+
+    const currentValues = {
+      volume: fieldChanged === 'volume' ? nextValue : quickFuelVolume.toString(),
+      price: fieldChanged === 'price' ? nextValue : quickFuelPricePerUnit.toString(),
+      cost: fieldChanged === 'cost' ? nextValue : quickFuelTotalCost.toString(),
+    };
+
+    if (nextHistory.length >= 2) {
+      const lastTwo = nextHistory.slice(-2);
+      const target = (['volume', 'price', 'cost'] as const).find(f => !lastTwo.includes(f));
+      
+      if (target) {
+        const valA = parseFloat(currentValues[lastTwo[0]]);
+        const valB = parseFloat(currentValues[lastTwo[1]]);
+
+        if (!isNaN(valA) && valA > 0 && !isNaN(valB) && valB > 0) {
+          if (target === 'cost') {
+            const v = parseFloat(currentValues.volume);
+            const p = parseFloat(currentValues.price);
+            if (!isNaN(v) && v > 0 && !isNaN(p) && p > 0) {
+              setQuickFuelTotalCost((v * p).toFixed(2));
+            }
+          } else if (target === 'volume') {
+            const c = parseFloat(currentValues.cost);
+            const p = parseFloat(currentValues.price);
+            if (!isNaN(c) && c > 0 && !isNaN(p) && p > 0) {
+              setQuickFuelVolume((c / p).toFixed(2));
+            }
+          } else if (target === 'price') {
+            const c = parseFloat(currentValues.cost);
+            const v = parseFloat(currentValues.volume);
+            if (!isNaN(c) && c > 0 && !isNaN(v) && v > 0) {
+              setQuickFuelPricePerUnit((c / v).toFixed(2));
+            }
+          }
+        }
       }
     }
+  };
+
+  const handleQuickFuelVolumeChange = (val: string) => {
+    setQuickFuelVolume(val);
+    updateQuickFuelHistoryAndCalculate('volume', val);
   };
 
   const handleQuickFuelPriceChange = (val: string) => {
     setQuickFuelPricePerUnit(val);
-    const p = parseFloat(val);
-    if (!isNaN(p) && p > 0) {
-      const v = parseFloat(quickFuelVolume.toString());
-      const c = parseFloat(quickFuelTotalCost.toString());
-      if (!isNaN(v) && v > 0) {
-        setQuickFuelTotalCost(parseFloat((v * p).toFixed(2)).toString());
-      } else if (!isNaN(c) && c > 0) {
-        setQuickFuelVolume(parseFloat((c / p).toFixed(3)).toString());
-      }
-    }
+    updateQuickFuelHistoryAndCalculate('price', val);
   };
 
   const handleQuickFuelCostChange = (val: string) => {
     setQuickFuelTotalCost(val);
-    const c = parseFloat(val);
-    if (!isNaN(c) && c > 0) {
-      const v = parseFloat(quickFuelVolume.toString());
-      const p = parseFloat(quickFuelPricePerUnit.toString());
-      if (!isNaN(v) && v > 0) {
-        setQuickFuelPricePerUnit(parseFloat((c / v).toFixed(3)).toString());
-      } else if (!isNaN(p) && p > 0) {
-        setQuickFuelVolume(parseFloat((c / p).toFixed(3)).toString());
-      }
-    }
+    updateQuickFuelHistoryAndCalculate('cost', val);
   };
 
   // --- 4. DATA MODEL INTEGRITY EVENT HANDLERS ---
@@ -531,6 +552,7 @@ export default function App() {
     setQuickFuelNotes('');
     setQuickFuelReceiptPhoto('');
     setQuickFuelError('');
+    setQuickFuelEditHistory([]);
     setShowQuickFuelModal(true);
   };
 
@@ -1000,13 +1022,18 @@ export default function App() {
                             handleQuickFuelVolumeChange(rawVal);
                           }
                         }}
+                        onBlur={() => {
+                          if (quickFuelVolume !== '') {
+                            setQuickFuelVolume(Number(quickFuelVolume).toFixed(2));
+                          }
+                        }}
                         className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs focus:outline-none focus:border-indigo-500 font-semibold"
                       />
                     </div>
 
                     {/* Price Per Unit */}
                     <div className="space-y-1">
-                      <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider block">Price/{preferences.volumeUnit}</label>
+                      <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider block">PRICE ({preferences.currency || 'USD'}/{preferences.volumeUnit})</label>
                       <input
                         id="quick-fuel-price-input"
                         type="text"
@@ -1016,6 +1043,11 @@ export default function App() {
                           const rawVal = parseNumberFromCommas(e.target.value);
                           if (rawVal === '' || /^\d*\.?\d*$/.test(rawVal)) {
                             handleQuickFuelPriceChange(rawVal);
+                          }
+                        }}
+                        onBlur={() => {
+                          if (quickFuelPricePerUnit !== '') {
+                            setQuickFuelPricePerUnit(Number(quickFuelPricePerUnit).toFixed(2));
                           }
                         }}
                         className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs focus:outline-none focus:border-indigo-500 font-semibold"
@@ -1036,7 +1068,12 @@ export default function App() {
                             handleQuickFuelCostChange(rawVal);
                           }
                         }}
-                        className="w-full h-11 px-3.5 bg-indigo-50 border border-indigo-100 rounded-xl text-slate-800 text-xs focus:outline-none focus:border-indigo-500 font-bold"
+                        onBlur={() => {
+                          if (quickFuelTotalCost !== '') {
+                            setQuickFuelTotalCost(Number(quickFuelTotalCost).toFixed(2));
+                          }
+                        }}
+                        className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs focus:outline-none focus:border-indigo-500 font-semibold"
                       />
                     </div>
                   </div>
@@ -1051,8 +1088,14 @@ export default function App() {
                         placeholder="e.g. Shell, Chevron"
                         value={quickFuelGasStation}
                         onChange={(e) => setQuickFuelGasStation(e.target.value)}
+                        list="quick-stations-list"
                         className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs focus:outline-none focus:border-indigo-500 font-semibold"
                       />
+                      <datalist id="quick-stations-list">
+                        {getGasStationSuggestions(refills).map(station => (
+                          <option key={station} value={station} />
+                        ))}
+                      </datalist>
                     </div>
 
                     {/* Fuel Brand */}
@@ -1064,8 +1107,14 @@ export default function App() {
                         placeholder="e.g. Regular unleaded, Premium"
                         value={quickFuelFuelBrand}
                         onChange={(e) => setQuickFuelFuelBrand(e.target.value)}
+                        list="quick-brands-list"
                         className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs focus:outline-none focus:border-indigo-500 font-semibold"
                       />
+                      <datalist id="quick-brands-list">
+                        {getFuelBrandSuggestions(refills).map(brand => (
+                          <option key={brand} value={brand} />
+                        ))}
+                      </datalist>
                     </div>
                   </div>
 
@@ -1183,13 +1232,20 @@ export default function App() {
                       }
                     }
 
+                    if (quickFuelGasStation.trim()) {
+                      saveGasStationEntry(quickFuelGasStation.trim());
+                    }
+                    if (quickFuelFuelBrand.trim()) {
+                      saveFuelBrandEntry(quickFuelFuelBrand.trim());
+                    }
+
                     handleAddRefill({
                       vehicleId: quickFuelVehicleId,
                       date: quickFuelDate,
                       odometer: Number(quickFuelOdometer),
-                      volume: Number(quickFuelVolume),
-                      pricePerUnit: Number(quickFuelPricePerUnit),
-                      totalCost: Number(quickFuelTotalCost),
+                      volume: Number(Number(quickFuelVolume).toFixed(2)),
+                      pricePerUnit: Number(Number(quickFuelPricePerUnit).toFixed(2)),
+                      totalCost: Number(Number(quickFuelTotalCost).toFixed(2)),
                       fullTank: quickFuelFullTank,
                       gasStation: quickFuelGasStation.trim() || undefined,
                       fuelBrand: quickFuelFuelBrand.trim() || undefined,

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {motion, AnimatePresence } from 'motion/react';
 import { Droplet, Plus, Trash2, Calendar, Gauge, Trash, Info, Check, X, AlertCircle, Camera, Image as ImageIcon } from 'lucide-react';
 import { FuelRefill, Vehicle, UserPreferences } from '../types';
-import { formatCurrency, formatEfficiency, formatDate, calculateRefillEfficiencies, formatNumberWithCommas, parseNumberFromCommas } from '../utils';
+import { formatCurrency, formatEfficiency, formatDate, calculateRefillEfficiencies, formatNumberWithCommas, parseNumberFromCommas, getGasStationSuggestions, getFuelBrandSuggestions, saveGasStationEntry, saveFuelBrandEntry } from '../utils';
 
 interface FuelTabProps {
   refills: FuelRefill[];
@@ -45,6 +45,7 @@ export default function FuelTab({
   const [receiptPhoto, setReceiptPhoto] = useState<string>('');
 
   const [formError, setFormError] = useState('');
+  const [fuelEditHistory, setFuelEditHistory] = useState<('volume' | 'price' | 'cost')[]>([]);
 
   // Handle immediate form triggers from Quick Actions
   useEffect(() => {
@@ -75,46 +76,66 @@ export default function FuelTab({
   );
 
   // Auto-calculate remaining field when any two of volume, price, or total cost are provided
-  const handleVolumeChange = (val: string) => {
-    setVolume(val);
-    const v = parseFloat(val);
-    if (!isNaN(v) && v > 0) {
-      const p = parseFloat(pricePerUnit);
-      const c = parseFloat(totalCost);
-      if (!isNaN(p) && p > 0) {
-        setTotalCost(parseFloat((v * p).toFixed(2)).toString());
-      } else if (!isNaN(c) && c > 0) {
-        setPricePerUnit(parseFloat((c / v).toFixed(3)).toString());
+  const updateFuelHistoryAndCalculate = (
+    fieldChanged: 'volume' | 'price' | 'cost',
+    nextValue: string
+  ) => {
+    const nextHistory = fuelEditHistory.filter(f => f !== fieldChanged);
+    nextHistory.push(fieldChanged);
+    setFuelEditHistory(nextHistory);
+
+    const currentValues = {
+      volume: fieldChanged === 'volume' ? nextValue : volume,
+      price: fieldChanged === 'price' ? nextValue : pricePerUnit,
+      cost: fieldChanged === 'cost' ? nextValue : totalCost,
+    };
+
+    if (nextHistory.length >= 2) {
+      const lastTwo = nextHistory.slice(-2);
+      const target = (['volume', 'price', 'cost'] as const).find(f => !lastTwo.includes(f));
+      
+      if (target) {
+        const valA = parseFloat(currentValues[lastTwo[0]]);
+        const valB = parseFloat(currentValues[lastTwo[1]]);
+
+        if (!isNaN(valA) && valA > 0 && !isNaN(valB) && valB > 0) {
+          if (target === 'cost') {
+            const v = parseFloat(currentValues.volume);
+            const p = parseFloat(currentValues.price);
+            if (!isNaN(v) && v > 0 && !isNaN(p) && p > 0) {
+              setTotalCost((v * p).toFixed(2));
+            }
+          } else if (target === 'volume') {
+            const c = parseFloat(currentValues.cost);
+            const p = parseFloat(currentValues.price);
+            if (!isNaN(c) && c > 0 && !isNaN(p) && p > 0) {
+              setVolume((c / p).toFixed(2));
+            }
+          } else if (target === 'price') {
+            const c = parseFloat(currentValues.cost);
+            const v = parseFloat(currentValues.volume);
+            if (!isNaN(c) && c > 0 && !isNaN(v) && v > 0) {
+              setPricePerUnit((c / v).toFixed(2));
+            }
+          }
+        }
       }
     }
+  };
+
+  const handleVolumeChange = (val: string) => {
+    setVolume(val);
+    updateFuelHistoryAndCalculate('volume', val);
   };
 
   const handlePriceChange = (val: string) => {
     setPricePerUnit(val);
-    const p = parseFloat(val);
-    if (!isNaN(p) && p > 0) {
-      const v = parseFloat(volume);
-      const c = parseFloat(totalCost);
-      if (!isNaN(v) && v > 0) {
-        setTotalCost(parseFloat((v * p).toFixed(2)).toString());
-      } else if (!isNaN(c) && c > 0) {
-        setVolume(parseFloat((c / p).toFixed(3)).toString());
-      }
-    }
+    updateFuelHistoryAndCalculate('price', val);
   };
 
   const handleCostChange = (val: string) => {
     setTotalCost(val);
-    const c = parseFloat(val);
-    if (!isNaN(c) && c > 0) {
-      const v = parseFloat(volume);
-      const p = parseFloat(pricePerUnit);
-      if (!isNaN(v) && v > 0) {
-        setPricePerUnit(parseFloat((c / v).toFixed(3)).toString());
-      } else if (!isNaN(p) && p > 0) {
-        setVolume(parseFloat((c / p).toFixed(3)).toString());
-      }
-    }
+    updateFuelHistoryAndCalculate('cost', val);
   };
 
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -189,13 +210,20 @@ export default function FuelTab({
       }
     }
 
+    if (gasStation.trim()) {
+      saveGasStationEntry(gasStation.trim());
+    }
+    if (fuelBrand.trim()) {
+      saveFuelBrandEntry(fuelBrand.trim());
+    }
+
     onAddRefill({
       vehicleId,
       date,
       odometer: Number(odometer),
-      volume: Number(volume),
-      pricePerUnit: Number(pricePerUnit),
-      totalCost: Number(totalCost),
+      volume: Number(Number(volume).toFixed(2)),
+      pricePerUnit: Number(Number(pricePerUnit).toFixed(2)),
+      totalCost: Number(Number(totalCost).toFixed(2)),
       fullTank,
       gasStation: gasStation.trim() || undefined,
       fuelBrand: fuelBrand.trim() || undefined,
@@ -208,6 +236,7 @@ export default function FuelTab({
     setVolume('');
     setPricePerUnit('');
     setTotalCost('');
+    setFuelEditHistory([]);
     setFullTank(true);
     setGasStation('');
     setFuelBrand('');
@@ -261,6 +290,7 @@ export default function FuelTab({
                 onClick={() => {
                   setShowAddForm(false);
                   setFormError('');
+                  setFuelEditHistory([]);
                   if (onCloseImmediateForm) onCloseImmediateForm();
                 }}
                 className="p-1 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-55 transition"
@@ -350,6 +380,11 @@ export default function FuelTab({
                     step="0.01"
                     value={formatNumberWithCommas(volume)}
                     onChange={e => { const rawVal = parseNumberFromCommas(e.target.value); if (rawVal === '' || /^\d*\.?\d*$/.test(rawVal)) { handleVolumeChange(rawVal); } }}
+                    onBlur={() => {
+                      if (volume !== '') {
+                        setVolume(Number(volume).toFixed(2));
+                      }
+                    }}
                     className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs focus:outline-none focus:border-indigo-500 font-semibold"
                   />
                 </div>
@@ -357,7 +392,7 @@ export default function FuelTab({
                  {/* Price Per Liter/Gallon */}
                 <div className="space-y-1">
                   <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">
-                    Price / {preferences.volumeUnit} ({preferences.currency || 'USD'})
+                    PRICE ({preferences.currency || 'USD'}/{preferences.volumeUnit})
                   </label>
                   <input
                     id="refill-price-input"
@@ -391,7 +426,7 @@ export default function FuelTab({
                         setTotalCost(Number(totalCost).toFixed(2));
                       }
                     }}
-                    className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-emerald-650 font-black text-xs focus:outline-none focus:border-indigo-500"
+                    className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs focus:outline-none focus:border-indigo-500 font-semibold"
                   />
                 </div>
 
@@ -403,8 +438,14 @@ export default function FuelTab({
                     type="text"
                     value={gasStation}
                     onChange={e => setGasStation(e.target.value)}
+                    list="fueltab-stations-list"
                     className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs focus:outline-none focus:border-indigo-500 font-semibold"
                   />
+                  <datalist id="fueltab-stations-list">
+                    {getGasStationSuggestions(refills).map(station => (
+                      <option key={station} value={station} />
+                    ))}
+                  </datalist>
                 </div>
 
                 {/* Fuel Brand */}
@@ -415,8 +456,14 @@ export default function FuelTab({
                     type="text"
                     value={fuelBrand}
                     onChange={e => setFuelBrand(e.target.value)}
+                    list="fueltab-brands-list"
                     className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs focus:outline-none focus:border-indigo-500 font-semibold"
                   />
+                  <datalist id="fueltab-brands-list">
+                    {getFuelBrandSuggestions(refills).map(brand => (
+                      <option key={brand} value={brand} />
+                    ))}
+                  </datalist>
                   <span className="text-[10px] text-slate-400 block font-semibold leading-tight">Octane 93, XCS, VPower, Gold, etc.</span>
                 </div>
 
