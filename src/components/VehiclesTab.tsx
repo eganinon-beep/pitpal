@@ -1830,12 +1830,6 @@ export default function VehiclesTab({
                           <span className="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Service / Name</span>
                           <span className="text-indigo-600 font-extrabold">{actServiceType}</span>
                         </div>
-                        {actTitle && actTitle !== 'Odometer Reading Updated' && (
-                          <div className="flex justify-between border-b border-slate-100 pb-2">
-                            <span className="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Description</span>
-                            <span className="text-slate-900 font-extrabold">{actTitle}</span>
-                          </div>
-                        )}
                         {Number(actCost) > 0 && (
                           <div className="flex justify-between border-b border-slate-100 pb-2">
                             <span className="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Cost</span>
@@ -2045,17 +2039,7 @@ export default function VehiclesTab({
                             className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs focus:outline-none focus:border-indigo-500 font-semibold"
                           />
                         </div>
-                        <div className="space-y-1 col-span-1 sm:col-span-2">
-                          <label className="text-[8px] uppercase font-bold text-slate-400 tracking-wider">Description (Optional)</label>
-                          <input
-                            id="act-title-input"
-                            type="text"
-                            placeholder="e.g. 10,000 mi maintenance check"
-                            value={actTitle}
-                            onChange={e => setActTitle(e.target.value)}
-                            className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs focus:outline-none focus:border-indigo-500 font-semibold"
-                          />
-                        </div>
+
                         <div className="space-y-1">
                           <label className="text-[8px] uppercase font-bold text-slate-400 tracking-wider">Cost</label>
                           <input

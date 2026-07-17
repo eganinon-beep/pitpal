@@ -1446,7 +1446,7 @@ export default function App() {
                     <div className="grid grid-cols-2 gap-4">
                       {/* Cost */}
                       <div className="space-y-1">
-                        <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider block">Total Cost (${preferences.currency || 'USD'})</label>
+                        <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider block">Total Cost ({preferences.currency || 'USD'})</label>
                         <div className="relative">
                           <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm font-bold">{getCurrencySymbol(preferences.currency)}</span>
                           <input
